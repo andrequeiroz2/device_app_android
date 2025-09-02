@@ -1,0 +1,68 @@
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Log files
+*.log
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+captures/
+output.json
+
+# Kotlin
+*.kotlin_module
+*.kts
+
+# Jetpack Compose previews
+.navigation/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Signing keys
+*.jks
+*.keystore
+
+# Google Services (Firebase)
+google-services.json
+# if you use GoogleService-Info.plist for iOS, ignore too:
+# GoogleService-Info.plist
+
+# NDK
+obj/
+.externalNativeBuild/
+
+# Kotlin/JS, multiplatform
+*.js
+*.js.map
+*.d.ts
+*.kotlin_metadata
+
+# Ktor cache (optional)
+ktor-client-cio/*.tmp
+
+# Misc
+*.hprof
+
+# Gradle wrapper jar
+gradle-wrapper.jar
+
+# IntelliJ
+*.ipr
+*.idea

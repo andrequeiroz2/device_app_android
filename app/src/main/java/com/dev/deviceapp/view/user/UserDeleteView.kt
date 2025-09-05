@@ -19,41 +19,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.dev.deviceapp.viewmodel.user.UserCreateViewModel
-import com.dev.deviceapp.model.user.UserCreateRequest
-import com.dev.deviceapp.viewmodel.user.UserUiState
 import androidx.hilt.navigation.compose.hiltViewModel
-
+import androidx.navigation.NavController
+import com.dev.deviceapp.model.login.LoginRequest
+import com.dev.deviceapp.viewmodel.user.UserDeleteUiState
+import com.dev.deviceapp.viewmodel.user.UserDeleteViewModel
 
 
 @Composable
-fun CreateUserView(
-    navController: androidx.navigation.NavController,
-    userViewModel: UserCreateViewModel = hiltViewModel()
-) {
+fun UserDeleteView(
+    navController: NavController,
+    userViewModel: UserDeleteViewModel = hiltViewModel()
+){
     val uiState by userViewModel.state.collectAsState()
 
-    var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirm_password by remember { mutableStateOf("") }
 
-    val user = UserCreateRequest(username, email, password, confirm_password)
+    val params = LoginRequest(email, password)
 
     Column(modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp)){
+        .padding(16.dp)) {
 
         Spacer(modifier = Modifier.height(20.dp))
-
-        TextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
             value = email,
@@ -73,23 +62,14 @@ fun CreateUserView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = confirm_password,
-            onValueChange = { confirm_password = it },
-            label = { Text("Confirm Password") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = {
-                userViewModel.createUser(user)
+                userViewModel.deleteUser(params)
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState !is UserUiState.Loading
+            enabled = uiState !is UserDeleteUiState.Loading
         ){
-            Text(text = "Create User")
+            Text(text = "Delete User")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -106,13 +86,13 @@ fun CreateUserView(
         Spacer(modifier = Modifier.height(16.dp))
 
         when(uiState){
-            is UserUiState.Loading -> CircularProgressIndicator()
-            is UserUiState.Success -> Text(
+            is UserDeleteUiState.Loading -> CircularProgressIndicator()
+            is UserDeleteUiState.Success -> Text(
                 (
-                        uiState as UserUiState.Success).message, color = MaterialTheme.colorScheme.primary)
-            is UserUiState.Error -> Text(
+                        uiState as UserDeleteUiState.Success).message, color = MaterialTheme.colorScheme.primary)
+            is UserDeleteUiState.Error -> Text(
                 (
-                        uiState as UserUiState.Error).message, color = MaterialTheme.colorScheme.error)
+                        uiState as UserDeleteUiState.Error).message, color = MaterialTheme.colorScheme.error)
             else -> {}
         }
     }

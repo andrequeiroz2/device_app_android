@@ -6,8 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -40,14 +42,23 @@ fun MainScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(30.dp),
         verticalArrangement = Arrangement.Center
     ) {
         Button(
-            onClick = { navController.navigate(AppDestinations.USER_CREATE_SCREEN) },
+            onClick = { navController.navigate(AppDestinations.LOGIN_SCREEN) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("User Create")
+            Text("Login")
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = { navController.navigate(AppDestinations.USER_TREE_SCREEN) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("User")
         }
     }
 }

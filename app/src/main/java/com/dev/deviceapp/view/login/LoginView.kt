@@ -1,7 +1,9 @@
-package com.dev.deviceapp.view.user
+package com.dev.deviceapp.view.login
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,49 +13,38 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.dev.deviceapp.viewmodel.user.UserCreateViewModel
-import com.dev.deviceapp.model.user.UserCreateRequest
-import com.dev.deviceapp.viewmodel.user.UserUiState
 import androidx.hilt.navigation.compose.hiltViewModel
-
-
+import com.dev.deviceapp.AppDestinations
+import com.dev.deviceapp.model.login.LoginRequest
+import com.dev.deviceapp.viewmodel.login.LoginUiState
+import com.dev.deviceapp.viewmodel.login.LoginViewModel
+import com.dev.deviceapp.viewmodel.user.UserUiState
 
 @Composable
-fun CreateUserView(
+fun LoginView(
     navController: androidx.navigation.NavController,
-    userViewModel: UserCreateViewModel = hiltViewModel()
-) {
-    val uiState by userViewModel.state.collectAsState()
+    loginViewModel: LoginViewModel = hiltViewModel()
+){
 
-    var username by remember { mutableStateOf("") }
+    val uiState by loginViewModel.state.collectAsState()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirm_password by remember { mutableStateOf("") }
 
-    val user = UserCreateRequest(username, email, password, confirm_password)
+    val login = LoginRequest(email, password)
 
     Column(modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp)){
+        .padding(20.dp)
+    ){
 
         Spacer(modifier = Modifier.height(20.dp))
-
-        TextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
             value = email,
@@ -73,23 +64,13 @@ fun CreateUserView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = confirm_password,
-            onValueChange = { confirm_password = it },
-            label = { Text("Confirm Password") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = {
-                userViewModel.createUser(user)
+                loginViewModel.login(login)
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = uiState !is UserUiState.Loading
+            modifier = Modifier.fillMaxWidth()
         ){
-            Text(text = "Create User")
+            Text("Login")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -106,13 +87,13 @@ fun CreateUserView(
         Spacer(modifier = Modifier.height(16.dp))
 
         when(uiState){
-            is UserUiState.Loading -> CircularProgressIndicator()
-            is UserUiState.Success -> Text(
+            is LoginUiState.Loading -> CircularProgressIndicator()
+            is LoginUiState.Success -> Text(
                 (
-                        uiState as UserUiState.Success).message, color = MaterialTheme.colorScheme.primary)
-            is UserUiState.Error -> Text(
+                        uiState as LoginUiState.Success).message, color = MaterialTheme.colorScheme.primary)
+            is LoginUiState.Error -> Text(
                 (
-                        uiState as UserUiState.Error).message, color = MaterialTheme.colorScheme.error)
+                        uiState as LoginUiState.Error).message, color = MaterialTheme.colorScheme.error)
             else -> {}
         }
     }

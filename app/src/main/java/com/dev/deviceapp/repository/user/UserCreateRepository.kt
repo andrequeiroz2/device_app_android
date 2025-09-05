@@ -8,9 +8,10 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import javax.inject.Inject
 import io.ktor.http.*
+import jakarta.inject.Named
 
 class UserCreateRepository @Inject constructor(
-    private val client: HttpClient
+    @Named("HttpClientUnauthenticated") private val client: HttpClient
 ){
     suspend fun createUser(user: UserCreateRequest): UserCreateResponse {
         val response = client.post("http://10.0.2.2:8081/user/create") {

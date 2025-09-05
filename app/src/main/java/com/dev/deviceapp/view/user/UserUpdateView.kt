@@ -19,30 +19,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.dev.deviceapp.viewmodel.user.UserCreateViewModel
-import com.dev.deviceapp.model.user.UserCreateRequest
-import com.dev.deviceapp.viewmodel.user.UserUiState
 import androidx.hilt.navigation.compose.hiltViewModel
-
-
+import androidx.navigation.NavController
+import com.dev.deviceapp.model.user.UserGetRequest
+import com.dev.deviceapp.model.user.UserUpdateRequest
+import com.dev.deviceapp.viewmodel.user.UserGetUiState
+import com.dev.deviceapp.viewmodel.user.UserUpdateUiState
+import com.dev.deviceapp.viewmodel.user.UserUpdateViewModel
 
 @Composable
-fun CreateUserView(
-    navController: androidx.navigation.NavController,
-    userViewModel: UserCreateViewModel = hiltViewModel()
-) {
+fun UserUpdateView(
+    navController: NavController,
+    userViewModel: UserUpdateViewModel = hiltViewModel()
+){
     val uiState by userViewModel.state.collectAsState()
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirm_password by remember { mutableStateOf("") }
 
-    val user = UserCreateRequest(username, email, password, confirm_password)
+    val params = UserUpdateRequest(username, email)
 
     Column(modifier = Modifier
         .fillMaxSize()
-        .padding(16.dp)){
+        .padding(16.dp)) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -64,32 +63,14 @@ fun CreateUserView(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextField(
-            value = confirm_password,
-            onValueChange = { confirm_password = it },
-            label = { Text("Confirm Password") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Button(
             onClick = {
-                userViewModel.createUser(user)
+                userViewModel.updateUser(params)
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState !is UserUiState.Loading
+            enabled = uiState !is UserUpdateUiState.Loading
         ){
-            Text(text = "Create User")
+            Text(text = "Update User")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -106,14 +87,15 @@ fun CreateUserView(
         Spacer(modifier = Modifier.height(16.dp))
 
         when(uiState){
-            is UserUiState.Loading -> CircularProgressIndicator()
-            is UserUiState.Success -> Text(
+            is UserUpdateUiState.Loading -> CircularProgressIndicator()
+            is UserUpdateUiState.Success -> Text(
                 (
-                        uiState as UserUiState.Success).message, color = MaterialTheme.colorScheme.primary)
-            is UserUiState.Error -> Text(
+                        uiState as UserUpdateUiState.Success).message, color = MaterialTheme.colorScheme.primary)
+            is UserUpdateUiState.Error -> Text(
                 (
-                        uiState as UserUiState.Error).message, color = MaterialTheme.colorScheme.error)
+                        uiState as UserUpdateUiState.Error).message, color = MaterialTheme.colorScheme.error)
             else -> {}
         }
+
     }
 }

@@ -1,5 +1,6 @@
 package com.dev.deviceapp.model.user
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,7 +10,6 @@ data class UserCreateRequest(
     val password: String,
     val confirm_password: String
 )
-
 
 sealed class UserCreateResponse {
     @Serializable
@@ -21,6 +21,7 @@ sealed class UserCreateResponse {
 
     @Serializable
     data class Error(
+        @SerialName("error_message")
         val errorMessage: String
     ) : UserCreateResponse()
 }

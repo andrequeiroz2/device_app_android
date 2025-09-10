@@ -84,6 +84,11 @@ fun UserCreateScreen(
                 ).show()
             }
             is UserCreateUiState.Success -> {
+                Toast.makeText(
+                    context,
+                    "User created successfully",
+                    Toast.LENGTH_LONG
+                ).show()
                 navController.navigate(AppDestinations.LOGIN_SCREEN)
             }
             else -> {}

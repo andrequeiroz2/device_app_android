@@ -12,21 +12,17 @@ import jakarta.inject.Named
 
 class UserGetRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient
-
 ){
-
     suspend fun getUser(param: UserGetRequest): UserGetResponse{
-
         val response = client.get("http://10.0.2.2:8081/user"){
 
-            if(param.uuid.isNotBlank()){
+            if(param.uuid?.isNotBlank() == true){
                 parameter("uuid", param.uuid)
             }
 
-            if(param.email.isNotBlank()){
+            if(param.email?.isNotBlank() == true){
                 parameter("email", param.email)
             }
-
         }
 
         return if(response.status == HttpStatusCode.OK){

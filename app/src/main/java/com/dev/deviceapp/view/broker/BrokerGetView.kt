@@ -1,4 +1,4 @@
-package com.dev.deviceapp.view.user
+package com.dev.deviceapp.view.broker
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -19,26 +18,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.dev.deviceapp.viewmodel.user.UserCreateViewModel
-import com.dev.deviceapp.model.user.UserCreateRequest
-import com.dev.deviceapp.viewmodel.user.UserUiState
 import androidx.hilt.navigation.compose.hiltViewModel
-
-
+import com.dev.deviceapp.model.broker.BrokerGetRequest
+import com.dev.deviceapp.viewmodel.broker.BrokerGetUiState
+import com.dev.deviceapp.viewmodel.broker.BrokerGetViewModel
 
 @Composable
-fun CreateUserView(
+fun BrokerGetView(
     navController: androidx.navigation.NavController,
-    userViewModel: UserCreateViewModel = hiltViewModel()
-) {
-    val uiState by userViewModel.state.collectAsState()
+    brokerViewModel: BrokerGetViewModel = hiltViewModel()
+){
+    val uiState by brokerViewModel.state.collectAsState()
 
-    var username by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirm_password by remember { mutableStateOf("") }
+    var uuid by remember { mutableStateOf("") }
+    var host by remember { mutableStateOf("") }
+    var port by remember { mutableStateOf(0) }
+    var connected by remember { mutableStateOf(true) }
 
-    val user = UserCreateRequest(username, email, password, confirm_password)
+    val params = BrokerGetRequest(
+        uuid,
+        host,
+        port,
+        connected
+    )
 
     Column(modifier = Modifier
         .fillMaxSize()
@@ -47,36 +49,36 @@ fun CreateUserView(
         Spacer(modifier = Modifier.height(20.dp))
 
         TextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username") },
+            value = uuid,
+            onValueChange = { uuid = it },
+            label = { Text("UUID") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
+            value = host,
+            onValueChange = { host = it },
+            label = { Text("Host") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
+            value = port.toString(),
+            onValueChange = { port = it.toInt() },
+            label = { Text("Port") },
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         TextField(
-            value = confirm_password,
-            onValueChange = { confirm_password = it },
-            label = { Text("Confirm Password") },
+            value = connected.toString(),
+            onValueChange = { connected = it.toBoolean() },
+            label = { Text("Connected") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -84,12 +86,11 @@ fun CreateUserView(
 
         Button(
             onClick = {
-                userViewModel.createUser(user)
+                brokerViewModel.getBroker(params)
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = uiState !is UserUiState.Loading
         ){
-            Text(text = "Create User")
+            Text(text = "Get Broker")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -106,13 +107,13 @@ fun CreateUserView(
         Spacer(modifier = Modifier.height(16.dp))
 
         when(uiState){
-            is UserUiState.Loading -> CircularProgressIndicator()
-            is UserUiState.Success -> Text(
+            is BrokerGetUiState.Loading -> CircularProgressIndicator()
+            is BrokerGetUiState.Success -> Text(
                 (
-                        uiState as UserUiState.Success).message, color = MaterialTheme.colorScheme.primary)
-            is UserUiState.Error -> Text(
+                        uiState as BrokerGetUiState.Success).message)
+            is BrokerGetUiState.Error -> Text(
                 (
-                        uiState as UserUiState.Error).message, color = MaterialTheme.colorScheme.error)
+                        uiState as BrokerGetUiState.Error).message)
             else -> {}
         }
     }

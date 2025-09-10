@@ -2,7 +2,6 @@ package com.dev.deviceapp.repository.login
 
 import com.dev.deviceapp.model.login.LoginRequest
 import com.dev.deviceapp.model.login.LoginResponse
-import com.dev.deviceapp.model.user.UserCreateResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import jakarta.inject.Inject
@@ -13,10 +12,8 @@ import jakarta.inject.Named
 
 
 class LoginRepository @Inject constructor(
-    @Named("HttpClientUnauthenticated") private val client: HttpClient,
-    private val tokenRepository: TokenRepository
+    @Named("HttpClientUnauthenticated") private val client: HttpClient
 ) {
-
     suspend fun login(login: LoginRequest): LoginResponse {
         val response = client.post("http://10.0.2.2:8081/login") {
             contentType(ContentType.Application.Json)
@@ -25,13 +22,11 @@ class LoginRepository @Inject constructor(
 
         return if(response.status == HttpStatusCode.OK){
             val data = response.body<LoginResponse.Success>()
-
-            tokenRepository.saveToken(data.token)
-
             LoginResponse.Success(
                 data.token
             )
         }else{
+
             val data = response.body<LoginResponse.Error>()
             LoginResponse.Error(
                 data.errorMessage

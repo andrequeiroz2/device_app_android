@@ -1,10 +1,9 @@
 package com.dev.deviceapp.viewmodel.user
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import android.util.Log
 import com.dev.deviceapp.repository.user.UserCreateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
+import jakarta.inject.Inject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.deviceapp.model.user.UserCreateRequest
@@ -18,22 +17,32 @@ class UserCreateViewModel @Inject constructor(
     private val repository: UserCreateRepository
 ): ViewModel(){
 
-    private val _state = MutableStateFlow<UserUiState>(UserUiState.Idle)
-    val state: StateFlow<UserUiState> = _state
+    private val _state = MutableStateFlow<UserCreateUiState>(UserCreateUiState.Idle)
+    val state: StateFlow<UserCreateUiState> = _state
 
     fun createUser(user: UserCreateRequest){
         viewModelScope.launch {
 
-            _state.value = UserUiState.Loading
+            _state.value = UserCreateUiState.Loading
 
-            val result = repository.createUser(user)
+            try {
 
-            _state.value = when(result){
-                is UserCreateResponse.Success -> UserUiState.Success(
-                    "User create successfully: $result"
-                )
-                is UserCreateResponse.Error -> UserUiState.Error(
-                    "Error: $result"
+                val result = repository.createUser(user)
+
+                _state.value = when (result) {
+                    is UserCreateResponse.Success -> UserCreateUiState.Success(
+                        result
+                    )
+
+                    is UserCreateResponse.Error -> UserCreateUiState.Error(
+                        result.errorMessage
+                    )
+                }
+
+            }catch (e: Exception){
+                Log.e("UserCreateViewModel", "Error: $e")
+                _state.value = UserCreateUiState.Error(
+                    "Application Error"
                 )
             }
         }
@@ -42,9 +51,9 @@ class UserCreateViewModel @Inject constructor(
 
 
 // UI states
-sealed class UserUiState {
-    object Idle : UserUiState()
-    object Loading : UserUiState()
-    data class Success(val message: String) : UserUiState()
-    data class Error(val message: String) : UserUiState()
+sealed class UserCreateUiState {
+    object Idle : UserCreateUiState()
+    object Loading : UserCreateUiState()
+    data class Success(val user: UserCreateResponse.Success) : UserCreateUiState()
+    data class Error(val message: String) : UserCreateUiState()
 }

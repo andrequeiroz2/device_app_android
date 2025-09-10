@@ -1,5 +1,6 @@
 package com.dev.deviceapp.viewmodel.user
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.deviceapp.model.login.LoginRequest
@@ -18,22 +19,30 @@ class UserDeleteViewModel @Inject constructor(
 ): ViewModel() {
 
     private val _state = MutableStateFlow<UserDeleteUiState> (UserDeleteUiState.Idle)
-
     val state: StateFlow<UserDeleteUiState> = _state
 
     fun deleteUser(param: LoginRequest){
         viewModelScope.launch {
             _state.value = UserDeleteUiState.Loading
 
-            val result = repository.deleteUser(param)
+            try{
 
-            _state.value = when(result) {
-                is UserDeleteResponse.Success -> UserDeleteUiState.Success(
-                    "User deleted successfully"
-                )
+                val result = repository.deleteUser(param)
 
-                is UserDeleteResponse.Error -> UserDeleteUiState.Error(
-                    "Error: $result"
+                _state.value = when(result) {
+                    is UserDeleteResponse.Success -> UserDeleteUiState.Success(
+                        "User deleted successfully"
+                    )
+
+                    is UserDeleteResponse.Error -> UserDeleteUiState.Error(
+                        result.errorMessage
+                    )
+                }
+
+            }catch (e: Exception){
+                Log.e("UserDeleteViewModel", "Error: $e")
+                _state.value = UserDeleteUiState.Error(
+                    "Application Error"
                 )
             }
         }

@@ -4,8 +4,8 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 data class UserGetRequest(
-    val uuid: String = "",
-    val email: String = "",
+    val uuid: String? = null,
+    val email: String? = null,
 )
 
 @Serializable

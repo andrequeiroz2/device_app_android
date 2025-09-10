@@ -1,60 +1,112 @@
 package com.dev.deviceapp
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.dev.deviceapp.view.login.LoginView
-import com.dev.deviceapp.view.user.CreateUserView
-import com.dev.deviceapp.view.user.UserDeleteView
-import com.dev.deviceapp.view.user.UserGetView
-import com.dev.deviceapp.view.user.UserTreeView
-import com.dev.deviceapp.view.user.UserUpdateView
+import com.dev.deviceapp.repository.login.TokenRepository
+import com.dev.deviceapp.view.broker.BrokerCreateView
+import com.dev.deviceapp.view.broker.BrokerGetView
+import com.dev.deviceapp.view.login.LoginScreen
+import com.dev.deviceapp.view.mainscreen.MainScreen
+import com.dev.deviceapp.view.profile.ProfileScreen
+import com.dev.deviceapp.view.user.UserCreateScreen
+import com.dev.deviceapp.view.user.UserDeleteScreen
+import com.dev.deviceapp.view.user.UserUpdateScreen
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import dagger.hilt.android.EntryPointAccessors
+
 
 object AppDestinations{
     const val MAIN_SCREEN = "mainScreen"
-    const val USER_TREE_SCREEN = "userTreeScreen"
-    const val USER_CREATE_SCREEN = "userCreateScreen"
-    const val USER_GET_SCREEN = "userGetScreen"
-    const val USER_DELETE_SCREEN = "userDeleteScreen"
-    const val USER_UPDATE_SCREEN = "userUpdateScreen"
+
+    //Login
     const val LOGIN_SCREEN = "loginScreen"
+
+    //User Crud
+    const val USER_CREATE_SCREEN = "userCreateScreen"
+    const val PROFILE_SCREEN = "registerScreen"
+    const val USER_UPDATE_SCREEN = "userUpdateScreen"
+    const val USER_DELETE_SCREEN = "userDeleteScreen"
+
+    //Broker Crud
+    const val BROKER_CREATE_SCREEN = "brokerCreateScreen"
+    const val BROKER_GET_SCREEN = "brokerGetScreen"
+}
+
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface TokenRepositoryEntryPoint {
+    fun tokenRepository(): TokenRepository
 }
 
 @Composable
 fun AppNavigation(){
+
+    val context = LocalContext.current
+
+    val tokenRepository = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            TokenRepositoryEntryPoint::class.java
+        ).tokenRepository()
+    }
+
     val navController = rememberNavController()
+
+    val startDestination = if (tokenRepository.getToken() != null) {
+        AppDestinations.MAIN_SCREEN
+    } else {
+        AppDestinations.LOGIN_SCREEN
+    }
+
+    val onLogout: () -> Unit = {
+        tokenRepository.clearToken()
+        navController.navigate(AppDestinations.LOGIN_SCREEN) {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
 
     NavHost(
         navController = navController,
-        startDestination = AppDestinations.MAIN_SCREEN
+        startDestination = startDestination
     ){
         composable(route = AppDestinations.MAIN_SCREEN){
-            MainScreen(navController = navController)
+            MainScreen(navController = navController, onLogout = onLogout)
         }
 
         composable(route = AppDestinations.LOGIN_SCREEN){
-            LoginView(navController = navController)
+            LoginScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.USER_TREE_SCREEN){
-            UserTreeView(navController = navController)
+        composable(route = AppDestinations.PROFILE_SCREEN){
+            ProfileScreen(navController = navController, onLogout = onLogout)
+        }
+
+        composable(route = AppDestinations.BROKER_GET_SCREEN){
+            BrokerGetView(navController = navController)
+        }
+
+        composable(route = AppDestinations.BROKER_CREATE_SCREEN){
+            BrokerCreateView(navController = navController)
         }
 
         composable(route = AppDestinations.USER_CREATE_SCREEN){
-            CreateUserView(navController = navController)
-        }
-
-        composable(route = AppDestinations.USER_GET_SCREEN){
-            UserGetView(navController = navController)
-        }
-
-        composable(route = AppDestinations.USER_DELETE_SCREEN){
-            UserDeleteView(navController = navController)
+            UserCreateScreen(navController = navController)
         }
 
         composable(route = AppDestinations.USER_UPDATE_SCREEN){
-            UserUpdateView(navController = navController)
+            UserUpdateScreen(navController = navController)
+        }
+
+        composable(route = AppDestinations.USER_DELETE_SCREEN){
+            UserDeleteScreen(navController = navController)
         }
     }
 }

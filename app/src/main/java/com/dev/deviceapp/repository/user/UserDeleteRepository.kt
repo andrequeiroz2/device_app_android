@@ -2,7 +2,6 @@ package com.dev.deviceapp.repository.user
 
 
 import com.dev.deviceapp.model.login.LoginRequest
-import com.dev.deviceapp.model.user.UserCreateResponse
 import com.dev.deviceapp.model.user.UserDeleteResponse
 import com.dev.deviceapp.repository.login.TokenRepository
 import io.ktor.client.HttpClient

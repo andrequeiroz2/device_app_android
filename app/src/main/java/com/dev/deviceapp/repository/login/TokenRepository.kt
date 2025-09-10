@@ -2,45 +2,26 @@ package com.dev.deviceapp.repository.login
 
 import android.util.Base64
 import android.util.Log
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import com.dev.deviceapp.model.token.TokenInfo
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import org.json.JSONObject
 
+
 @Singleton
-class TokenRepository @Inject constructor(
+class TokenRepository @Inject constructor(){
+    private var token: String? = null
 
-    private val dataStore: DataStore<Preferences>
-){
-    companion object{
-        private val TOKEN_KEY = stringPreferencesKey("auth_token")
-    }
-
-    val token: Flow<String?> = dataStore.data.map { preferences ->
-        preferences[TOKEN_KEY]
-    }
-
-    suspend fun saveToken(token: String){
-        dataStore.edit { preferences ->
-            preferences[TOKEN_KEY] = token
-        }
+    fun saveToken(token: String){
+        this.token = token
         Log.i("TokenRepository", "Token saved: $token")
     }
 
-    suspend fun clearToken(){
-        dataStore.edit { preferences ->
-            preferences.remove(TOKEN_KEY)
-        }
+    fun clearToken(){
+        token = null
     }
 
-    suspend fun getTokenInfoRepository(): TokenInfo? {
+    fun getTokenInfoRepository(): TokenInfo? {
         val token = getToken()?: return null
 
         return try{
@@ -67,7 +48,5 @@ class TokenRepository @Inject constructor(
         }
     }
 
-    suspend fun getToken(): String? {
-        return token.first()
-    }
+    fun getToken(): String? = token
 }

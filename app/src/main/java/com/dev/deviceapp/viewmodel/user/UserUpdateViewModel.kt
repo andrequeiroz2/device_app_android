@@ -1,5 +1,6 @@
 package com.dev.deviceapp.viewmodel.user
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.deviceapp.model.user.UserUpdateRequest
@@ -17,22 +18,42 @@ class UserUpdateViewModel @Inject constructor(
 ): ViewModel(){
 
     private val _state = MutableStateFlow<UserUpdateUiState>(UserUpdateUiState.Idle)
-
     val state: StateFlow<UserUpdateUiState> = _state
 
     fun updateUser(param: UserUpdateRequest) {
         viewModelScope.launch {
             _state.value = UserUpdateUiState.Loading
 
-            val result = repository.updateUser(param)
+            try{
 
-            _state.value = when(result){
-                is UserUpdateResponse.Success -> UserUpdateUiState.Success(
-                    "User update successfully: $result"
-                )
+                val result = repository.updateUser(param)
 
-                is UserUpdateResponse.Error -> UserUpdateUiState.Error(
-                    "Error: $result"
+                _state.value = when (result) {
+
+                    is UserUpdateResponse.Success -> {
+                        Log.i(
+                            "UserUpdateViewModel",
+                            "User update successful: data: $param, result: $result"
+                        )
+                        UserUpdateUiState.Success(
+                            result
+                        )
+                    }
+
+                    is UserUpdateResponse.Error -> {
+                        Log.e(
+                            "UserUpdateViewModel",
+                            "Error: ${result.errorMessage}, data: $param")
+                        UserUpdateUiState.Error(
+                            result.errorMessage
+                        )
+                    }
+                }
+
+            }catch (e: Exception){
+                Log.e("UserUpdateViewModel", "Error: $e")
+                _state.value = UserUpdateUiState.Error(
+                    "Application Error"
                 )
             }
         }
@@ -42,6 +63,6 @@ class UserUpdateViewModel @Inject constructor(
 sealed class UserUpdateUiState {
     object Idle : UserUpdateUiState()
     object Loading : UserUpdateUiState()
-    data class Success(val message: String) : UserUpdateUiState()
+    data class Success(val user: UserUpdateResponse.Success) : UserUpdateUiState()
     data class Error(val message: String) : UserUpdateUiState()
 }

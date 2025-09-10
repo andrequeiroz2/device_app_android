@@ -55,10 +55,10 @@ fun MainScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(10.dp))
 
         Button(
-            onClick = { navController.navigate(AppDestinations.USER_TREE_SCREEN) },
+            onClick = { navController.navigate(AppDestinations.BROKER_TREE_SCREEN) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("User")
+            Text("Broker")
         }
     }
 }

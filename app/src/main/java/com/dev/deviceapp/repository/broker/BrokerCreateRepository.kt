@@ -20,9 +20,9 @@ class BrokerCreateRepository @Inject constructor(
 
     suspend fun createBroker(broker: BrokerCreateRequest): BrokerResponse {
         val userInfo = tokenRepository.getTokenInfoRepository() ?:
-            throw IllegalStateException("User not Authenticate")
+        throw IllegalStateException("User not Authenticate")
 
-        val response = client.post("http://10.0.2.2:8081/broker/${userInfo.uuid}") {
+        val response = client.post("http://10.0.2.2:8081/broker") {
             contentType(ContentType.Application.Json)
             setBody(broker)
         }
@@ -33,19 +33,18 @@ class BrokerCreateRepository @Inject constructor(
                 data.uuid,
                 data.host,
                 data.port,
-                data.client_id,
+                data.clientId,
                 data.version,
-                data.version_text,
-                data.keep_alive,
-                data.clean_session,
-                data.last_will_topic,
-                data.last_will_message,
-                data.last_will_qos,
-                data.last_will_retain,
+                data.versionText,
+                data.keepAlive,
+                data.cleanSession,
+                data.lastWillTopic,
+                data.lastWillMessage,
+                data.lastWillQos,
+                data.lastWillRetain,
                 data.connected,
-                data.created_at,
-                data.updated_at,
-                data.deleted_at
+                data.createdAt,
+                data.updatedAt,
             )
         }else{
             val data = response.body<BrokerResponse.Error>()

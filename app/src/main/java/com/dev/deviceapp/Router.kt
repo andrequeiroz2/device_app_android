@@ -7,8 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.dev.deviceapp.repository.login.TokenRepository
-import com.dev.deviceapp.view.broker.BrokerCreateView
-import com.dev.deviceapp.view.broker.BrokerGetView
+import com.dev.deviceapp.view.broker.BrokerCreateScreen
+import com.dev.deviceapp.view.broker.BrokerGetFilterScreen
+import com.dev.deviceapp.view.broker.BrokerTreeScreen
 import com.dev.deviceapp.view.login.LoginScreen
 import com.dev.deviceapp.view.mainscreen.MainScreen
 import com.dev.deviceapp.view.profile.ProfileScreen
@@ -34,8 +35,9 @@ object AppDestinations{
     const val USER_DELETE_SCREEN = "userDeleteScreen"
 
     //Broker Crud
+    const val BROKER_TREE_SCREEN = "brokerTreeScreen"
     const val BROKER_CREATE_SCREEN = "brokerCreateScreen"
-    const val BROKER_GET_SCREEN = "brokerGetScreen"
+    const val BROKER_GET_FILTER_SCREEN = "brokerGetFilterScreen"
 }
 
 
@@ -89,14 +91,6 @@ fun AppNavigation(){
             ProfileScreen(navController = navController, onLogout = onLogout)
         }
 
-        composable(route = AppDestinations.BROKER_GET_SCREEN){
-            BrokerGetView(navController = navController)
-        }
-
-        composable(route = AppDestinations.BROKER_CREATE_SCREEN){
-            BrokerCreateView(navController = navController)
-        }
-
         composable(route = AppDestinations.USER_CREATE_SCREEN){
             UserCreateScreen(navController = navController)
         }
@@ -108,5 +102,19 @@ fun AppNavigation(){
         composable(route = AppDestinations.USER_DELETE_SCREEN){
             UserDeleteScreen(navController = navController)
         }
+
+        composable(route = AppDestinations.BROKER_TREE_SCREEN){
+            BrokerTreeScreen(navController = navController)
+        }
+
+        composable(route = AppDestinations.BROKER_CREATE_SCREEN){
+            BrokerCreateScreen(navController = navController)
+        }
+
+        composable(route = AppDestinations.BROKER_GET_FILTER_SCREEN){
+            BrokerGetFilterScreen(navController = navController)
+        }
+
+
     }
 }

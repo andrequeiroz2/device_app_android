@@ -1,5 +1,6 @@
 package com.dev.deviceapp.viewmodel.broker
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.deviceapp.model.broker.BrokerCreateRequest
@@ -16,7 +17,6 @@ class BrokerCreateViewModel @Inject constructor(
     private val repository: BrokerCreateRepository
 ): ViewModel(){
 
-
     private val _state = MutableStateFlow<BrokerCreateUiState>(BrokerCreateUiState.Idle)
     val state: StateFlow<BrokerCreateUiState> = _state
 
@@ -25,14 +25,24 @@ class BrokerCreateViewModel @Inject constructor(
 
             _state.value = BrokerCreateUiState.Loading
 
-            val result = repository.createBroker(broker)
+            try {
 
-            _state.value = when(result){
-                is BrokerResponse.Success -> BrokerCreateUiState.Success(
-                    "Broker create successfully: $result"
-                )
-                is BrokerResponse.Error -> BrokerCreateUiState.Error(
-                    "Error: $result"
+                val result = repository.createBroker(broker)
+
+                _state.value = when (result) {
+                    is BrokerResponse.Success -> BrokerCreateUiState.Success(
+                        result
+                    )
+
+                    is BrokerResponse.Error -> BrokerCreateUiState.Error(
+                        result.errorMessage
+                    )
+                }
+
+            }catch (e: Exception){
+                Log.e("BrokerCreateViewModel", "Error: $e")
+                _state.value = BrokerCreateUiState.Error(
+                    "Application Error"
                 )
             }
         }
@@ -43,6 +53,6 @@ class BrokerCreateViewModel @Inject constructor(
 sealed class BrokerCreateUiState {
     object Idle : BrokerCreateUiState()
     object Loading : BrokerCreateUiState()
-    data class Success(val message: String) : BrokerCreateUiState()
+    data class Success(val broker: BrokerResponse.Success) : BrokerCreateUiState()
     data class Error(val message: String) : BrokerCreateUiState()
 }

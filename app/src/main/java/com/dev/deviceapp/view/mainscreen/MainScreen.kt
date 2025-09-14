@@ -1,6 +1,5 @@
 package com.dev.deviceapp.view.mainscreen
 
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.dev.deviceapp.AppDestinations
+import com.dev.deviceapp.AppNavigation
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import com.dev.deviceapp.viewmodel.user.UserGetUiState
 import com.dev.deviceapp.viewmodel.user.UserGetViewModel
@@ -79,11 +79,11 @@ fun MainScreen(
                 HorizontalDivider(Modifier, DividerDefaults.Thickness, color = Color.Gray)
 
                 NavigationDrawerItem(
-                    label = { Text("Brokers", color = Color.White) },
+                    label = { Text("Broker", color = Color.White) },
                     selected = false,
                     onClick = {
                         scope.launch { drawerState.close() }
-                        navController.navigate("broker_screen")
+                        navController.navigate(AppDestinations.BROKER_TREE_SCREEN)
                     }
                 )
             }

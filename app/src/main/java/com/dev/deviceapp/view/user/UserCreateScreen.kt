@@ -48,7 +48,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.model.user.UserCreateRequest
-import com.dev.deviceapp.viewmodel.login.LoginUiState
 import com.dev.deviceapp.viewmodel.user.UserCreateUiState
 import com.dev.deviceapp.viewmodel.user.UserCreateViewModel
 

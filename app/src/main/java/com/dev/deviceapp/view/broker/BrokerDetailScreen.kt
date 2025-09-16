@@ -1,19 +1,27 @@
 package com.dev.deviceapp.view.broker
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.model.broker.BrokerSuccess
+import com.dev.deviceapp.viewmodel.broker.BrokerCreateUiState
+import com.dev.deviceapp.viewmodel.broker.BrokerDeleteUiState
+import com.dev.deviceapp.viewmodel.broker.BrokerDeleteViewModel
 import com.dev.deviceapp.viewmodel.broker.BrokerUpdateViewModel
 
 
@@ -21,8 +29,34 @@ import com.dev.deviceapp.viewmodel.broker.BrokerUpdateViewModel
 @Composable
 fun BrokerDetailScreen(
     navController: NavController,
-    brokerUpdateViewModel: BrokerUpdateViewModel = hiltViewModel()
+    brokerUpdateViewModel: BrokerUpdateViewModel = hiltViewModel(),
+    brokerDeleteViewModel: BrokerDeleteViewModel = hiltViewModel()
 ) {
+
+    val brokerDeleteUiState by brokerDeleteViewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(brokerDeleteUiState) {
+        when (brokerDeleteUiState) {
+            is BrokerDeleteUiState.Error -> {
+                Toast.makeText(
+                    context,
+                    (brokerDeleteUiState as BrokerDeleteUiState.Error).message,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+            is BrokerDeleteUiState.Success -> {
+                Toast.makeText(
+                    context,
+                    (brokerDeleteUiState as BrokerDeleteUiState.Success).message,
+                    Toast.LENGTH_LONG
+                ).show()
+                navController.navigate(AppDestinations.MAIN_SCREEN)
+            }
+            else -> {}
+        }
+    }
+
     val broker = remember {
         navController.previousBackStackEntry
             ?.savedStateHandle
@@ -122,6 +156,26 @@ fun BrokerDetailScreen(
                     shape = MaterialTheme.shapes.medium
                 ) {
                     Text("Edit")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        broker.let {
+                            brokerDeleteViewModel.deleteBroker(broker.uuid)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD2507D),
+                        contentColor = Color.White
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Delete")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

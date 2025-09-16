@@ -42,6 +42,7 @@ object AppDestinations{
     const val BROKER_GET_FILTER_SCREEN = "brokerGetFilterScreen"
     const val BROKER_DETAIL_SCREEN = "brokerDetailScreen"
     const val BROKER_UPDATE_SCREEN = "brokerUpdateScreen"
+
 }
 
 
@@ -126,6 +127,5 @@ fun AppNavigation(){
         composable(route = AppDestinations.BROKER_UPDATE_SCREEN){
             BrokerUpdateScreen(navController = navController)
         }
-
     }
 }

@@ -15,11 +15,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.dev.deviceapp.AppDestinations
-import com.dev.deviceapp.AppNavigation
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import com.dev.deviceapp.viewmodel.user.UserGetUiState
 import com.dev.deviceapp.viewmodel.user.UserGetViewModel

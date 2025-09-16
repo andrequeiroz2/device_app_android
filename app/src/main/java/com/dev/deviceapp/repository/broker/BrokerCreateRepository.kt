@@ -12,12 +12,14 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import jakarta.inject.Inject
 import jakarta.inject.Named
+import kotlin.time.ExperimentalTime
 
 class BrokerCreateRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient,
     private val tokenRepository: TokenRepository
 ){
 
+    @OptIn(ExperimentalTime::class)
     suspend fun createBroker(broker: BrokerCreateRequest): BrokerResponse {
         val userInfo = tokenRepository.getTokenInfoRepository() ?:
         throw IllegalStateException("User not Authenticate")

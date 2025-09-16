@@ -2,6 +2,7 @@ package com.dev.deviceapp.view.broker
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,7 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -61,6 +62,8 @@ import com.dev.deviceapp.model.broker.BrokerResponse
 import com.dev.deviceapp.viewmodel.broker.BrokerPaginateViewModel
 import kotlinx.coroutines.launch
 import androidx.paging.*
+import com.dev.deviceapp.model.broker.BrokerSuccess
+import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,7 +169,7 @@ fun BrokerGetFilterScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                BrokerList(brokers)
+                BrokerList(brokers, navController)
             }
         }
     }
@@ -244,8 +247,12 @@ fun BrokerGetFilterScreen(
     }
 }
 
+@OptIn(ExperimentalTime::class)
 @Composable
-fun BrokerList(brokers: LazyPagingItems<BrokerResponse.Success>) {
+fun BrokerList(
+    brokers: LazyPagingItems<BrokerResponse.Success>,
+    navController: NavController
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -255,7 +262,30 @@ fun BrokerList(brokers: LazyPagingItems<BrokerResponse.Success>) {
             val broker = brokers[index]
             broker?.let {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable{
+                            navController.currentBackStackEntry
+                                ?.savedStateHandle
+                                ?.set("brokerItem", BrokerSuccess(
+                                    it.uuid,
+                                    it.host,
+                                    it.port,
+                                    it.clientId,
+                                    it.version,
+                                    it.versionText,
+                                    it.keepAlive,
+                                    it.cleanSession
+                                    ,it.lastWillTopic,
+                                    it.lastWillMessage,
+                                    it.lastWillQos,
+                                    it.lastWillRetain,
+                                    it.connected,
+                                    it.createdAt,
+                                    it.updatedAt
+                                ))
+                            navController.navigate(AppDestinations.BROKER_DETAIL_SCREEN)
+                        },
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -272,4 +302,34 @@ fun BrokerList(brokers: LazyPagingItems<BrokerResponse.Success>) {
         }
     }
 }
+
+
+//@Composable
+//fun BrokerList(brokers: LazyPagingItems<BrokerResponse.Success>) {
+//    LazyColumn(
+//        modifier = Modifier.fillMaxSize(),
+//        contentPadding = PaddingValues(16.dp),
+//        verticalArrangement = Arrangement.spacedBy(12.dp)
+//    ) {
+//        items(brokers.itemCount) { index ->
+//            val broker = brokers[index]
+//            broker?.let {
+//                Card(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+//                ) {
+//                    Column(modifier = Modifier.padding(16.dp)) {
+//                        Text("UUID: ${it.uuid}", color = Color.White)
+//                        Text("Host: ${it.host}", color = Color.White)
+//                        Text("Port: ${it.port}", color = Color.White)
+//                        Text(
+//                            "Connected: ${it.connected}",
+//                            color = if (it.connected) Color(0xFF00A86B) else Color.Red
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
 

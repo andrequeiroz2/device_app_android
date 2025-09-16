@@ -1,5 +1,6 @@
 package com.dev.deviceapp.view.broker
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,31 +40,48 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
-import com.dev.deviceapp.model.broker.BrokerCreateRequest
-import com.dev.deviceapp.viewmodel.broker.BrokerCreateUiState
-import com.dev.deviceapp.viewmodel.broker.BrokerCreateViewModel
-
+import com.dev.deviceapp.model.broker.BrokerSuccess
+import com.dev.deviceapp.model.broker.BrokerUpdateRequest
+import com.dev.deviceapp.viewmodel.broker.BrokerUpdateUiState
+import com.dev.deviceapp.viewmodel.broker.BrokerUpdateViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BrokerCreateScreen(
+fun BrokerUpdateScreen(
     navController: NavController,
-    brokerViewModel: BrokerCreateViewModel = hiltViewModel()
+    brokerViewModel: BrokerUpdateViewModel = hiltViewModel()
 ){
-
     val uiState by brokerViewModel.state.collectAsState()
     val context = LocalContext.current
 
-    var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("") }
-    var clientId by remember { mutableStateOf("") }
-    var version by remember { mutableStateOf(0) }
-    var keepAlive by remember { mutableStateOf(60) }
-    var cleanSession by remember { mutableStateOf(true) }
-    var lastWillTopic by remember { mutableStateOf("") }
-    var lastWillMessage by remember { mutableStateOf("") }
-    var lastWillQos by remember { mutableStateOf(0) }
-    var lastWillRetain by remember { mutableStateOf(true) }
+    val brokerCache = remember {
+        navController.previousBackStackEntry
+            ?.savedStateHandle
+            ?.get<BrokerSuccess>("brokerItem")
+    }
+
+    if (brokerCache == null) {
+        Toast.makeText(
+            context,
+            "Application error",
+            Toast.LENGTH_LONG
+        ).show()
+        navController.popBackStack()
+    }
+
+    Log.i("BrokerUpdateScreen", "brokerCache: ${brokerCache?.uuid}")
+
+    var host by remember { mutableStateOf(brokerCache?.host?: "") }
+    var port by remember { mutableIntStateOf(brokerCache!!.port) }
+    var clientId by remember { mutableStateOf(brokerCache?.clientId?: "") }
+    var version by remember { mutableIntStateOf(brokerCache!!.version) }
+    var keepAlive by remember { mutableIntStateOf(brokerCache!!.keepAlive) }
+    var cleanSession by remember { mutableStateOf(brokerCache?.cleanSession?: false) }
+    var lastWillTopic by remember { mutableStateOf(brokerCache?.lastWillTopic?: "") }
+    var lastWillMessage by remember { mutableStateOf(brokerCache?.lastWillMessage?: "") }
+    var lastWillQos by remember { mutableIntStateOf(brokerCache!!.lastWillQos) }
+    var lastWillRetain by remember { mutableStateOf(brokerCache?.lastWillRetain?: true) }
+    var connected by remember { mutableStateOf(brokerCache!!.connected) }
 
     var hostError by remember { mutableStateOf<String?>(null) }
     var portError by remember { mutableStateOf<String?>(null) }
@@ -77,17 +96,20 @@ fun BrokerCreateScreen(
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is BrokerCreateUiState.Error -> {
+            is BrokerUpdateUiState.Error -> {
                 Toast.makeText(
                     context,
-                    (uiState as BrokerCreateUiState.Error).message,
+                    (uiState as BrokerUpdateUiState.Error).message,
                     Toast.LENGTH_LONG
                 ).show()
+                if((uiState as BrokerUpdateUiState.Error).message.contains("Unauthorized")){
+                    navController.navigate(AppDestinations.LOGIN_SCREEN)
+                }
             }
-            is BrokerCreateUiState.Success -> {
+            is BrokerUpdateUiState.Success -> {
                 Toast.makeText(
                     context,
-                    "Broker created successfully",
+                    "Broker update successfully",
                     Toast.LENGTH_LONG
                 ).show()
                 navController.navigate(AppDestinations.MAIN_SCREEN)
@@ -110,7 +132,7 @@ fun BrokerCreateScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ){
                 Text(
-                    text = "Create Broker",
+                    text = "Update Broker",
                     style = MaterialTheme.typography.headlineLarge,
                     color = Color(0xFF00A86B)
                 )
@@ -139,7 +161,8 @@ fun BrokerCreateScreen(
                         text = hostError ?: "",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier
+                            .align(Alignment.Start)
                             .padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -147,12 +170,9 @@ fun BrokerCreateScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = port,
+                    value = port.toString(),
                     onValueChange = {
-                        if(it.all {char -> char.isDigit()}){
-                            port = it
-                            if (it.isNotBlank()) portError = null
-                        }
+                        portError = null
                     },
                     label = { Text("Port", color = Color(0xFFE0F2F1)) },
                     modifier = Modifier.fillMaxWidth(),
@@ -170,7 +190,8 @@ fun BrokerCreateScreen(
                         text = portError ?: "",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier
+                            .align(Alignment.Start)
                             .padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -199,7 +220,8 @@ fun BrokerCreateScreen(
                         text = clientIdError ?: "",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier
+                            .align(Alignment.Start)
                             .padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -237,7 +259,8 @@ fun BrokerCreateScreen(
                         text = keepAliveError ?: "",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier
+                            .align(Alignment.Start)
                             .padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -275,7 +298,8 @@ fun BrokerCreateScreen(
                         text = lastWillTopicError ?: "",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier
+                            .align(Alignment.Start)
                             .padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -304,7 +328,8 @@ fun BrokerCreateScreen(
                         text = lastWillMessageError ?: "",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.align(Alignment.Start)
+                        modifier = Modifier
+                            .align(Alignment.Start)
                             .padding(start = 16.dp, top = 4.dp)
                     )
                 }
@@ -337,7 +362,7 @@ fun BrokerCreateScreen(
                             hostError = "Host is required"
                             hasError = true
                         }
-                        if (port.isBlank()) {
+                        if (port.toString().isBlank()) {
                             portError = "Port is required"
                             hasError = true
                         }
@@ -355,10 +380,11 @@ fun BrokerCreateScreen(
                         }
 
                         if (!hasError) {
-                            brokerViewModel.createBroker(
-                                BrokerCreateRequest(
+                            brokerViewModel.updateBroker(
+                                BrokerUpdateRequest(
+                                    brokerCache!!.uuid,
                                     host,
-                                    port.toInt(),
+                                    port,
                                     clientId,
                                     version,
                                     keepAlive,
@@ -366,7 +392,8 @@ fun BrokerCreateScreen(
                                     lastWillTopic,
                                     lastWillMessage,
                                     lastWillQos,
-                                    lastWillRetain
+                                    lastWillRetain,
+                                    connected
                                 )
                             )
                         }
@@ -403,7 +430,7 @@ fun BrokerCreateScreen(
                 }
             }
         }
-        if (uiState is BrokerCreateUiState.Loading){
+        if (uiState is BrokerUpdateUiState.Loading){
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -414,4 +441,5 @@ fun BrokerCreateScreen(
             }
         }
     }
+
 }

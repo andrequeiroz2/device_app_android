@@ -19,17 +19,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.model.broker.BrokerSuccess
-import com.dev.deviceapp.viewmodel.broker.BrokerCreateUiState
 import com.dev.deviceapp.viewmodel.broker.BrokerDeleteUiState
 import com.dev.deviceapp.viewmodel.broker.BrokerDeleteViewModel
-import com.dev.deviceapp.viewmodel.broker.BrokerUpdateViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrokerDetailScreen(
     navController: NavController,
-    brokerUpdateViewModel: BrokerUpdateViewModel = hiltViewModel(),
     brokerDeleteViewModel: BrokerDeleteViewModel = hiltViewModel()
 ) {
 

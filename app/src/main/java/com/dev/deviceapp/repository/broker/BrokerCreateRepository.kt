@@ -1,8 +1,11 @@
 package com.dev.deviceapp.repository.broker
 
+import android.content.Context
+import com.dev.deviceapp.config.ApiRoutes
 import com.dev.deviceapp.model.broker.BrokerCreateRequest
 import com.dev.deviceapp.model.broker.BrokerResponse
 import com.dev.deviceapp.repository.login.TokenRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -16,15 +19,21 @@ import kotlin.time.ExperimentalTime
 
 class BrokerCreateRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient,
+    @ApplicationContext private val context: Context,
     private val tokenRepository: TokenRepository
 ){
 
+    private val apiRoutes = ApiRoutes(context)
+
     @OptIn(ExperimentalTime::class)
     suspend fun createBroker(broker: BrokerCreateRequest): BrokerResponse {
-        val userInfo = tokenRepository.getTokenInfoRepository() ?:
+
+        tokenRepository.getTokenInfoRepository() ?:
         throw IllegalStateException("User not Authenticate")
 
-        val response = client.post("http://10.0.2.2:8081/broker") {
+        val url = apiRoutes.getUrl("broker_post")
+
+        val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(broker)
         }

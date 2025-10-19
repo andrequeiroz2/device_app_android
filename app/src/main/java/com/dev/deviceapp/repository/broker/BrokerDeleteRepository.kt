@@ -1,8 +1,11 @@
 package com.dev.deviceapp.repository.broker
 
+import android.content.Context
+import com.dev.deviceapp.config.ApiRoutes
 import com.dev.deviceapp.model.broker.BrokerDeleteResponse
 import com.dev.deviceapp.model.user.UserDeleteResponse
 import com.dev.deviceapp.repository.login.TokenRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
@@ -12,14 +15,19 @@ import jakarta.inject.Named
 
 class BrokerDeleteRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient,
+    @ApplicationContext private val context: Context,
     private val tokenRepository: TokenRepository
 ) {
 
+    private val apiRoutes = ApiRoutes(context)
     suspend fun deleteBroker(brokerUuid: String): BrokerDeleteResponse {
-        val userInfo = tokenRepository.getTokenInfoRepository() ?:
+
+        tokenRepository.getTokenInfoRepository() ?:
             throw IllegalStateException("User not Authenticate")
 
-        val response = client.delete("http://10.0.2.2:8081/broker/${brokerUuid}")
+        val url = apiRoutes.getUrl("broker_delete", brokerUuid)
+
+        val response = client.delete(url)
 
         return if(response.status == HttpStatusCode.NoContent){
             BrokerDeleteResponse.Success(

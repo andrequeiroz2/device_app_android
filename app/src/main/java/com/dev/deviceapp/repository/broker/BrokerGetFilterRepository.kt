@@ -1,8 +1,11 @@
 package com.dev.deviceapp.repository.broker
 
+import android.content.Context
+import com.dev.deviceapp.config.ApiRoutes
 import com.dev.deviceapp.model.broker.BrokerGetFilterRequest
 import com.dev.deviceapp.model.broker.BrokerGetFilterResponse
 import com.dev.deviceapp.repository.login.TokenRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -16,14 +19,19 @@ import jakarta.inject.Named
 
 class BrokerGetFilterRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient,
+    @ApplicationContext private val context: Context,
     private val tokenRepository: TokenRepository
 ){
 
+    private val apiRoutes = ApiRoutes(context)
     suspend fun getBroker(params: BrokerGetFilterRequest): BrokerGetFilterResponse {
-        val userInfo = tokenRepository.getTokenInfoRepository() ?:
+
+        tokenRepository.getTokenInfoRepository() ?:
             throw IllegalStateException("User not Authenticate")
 
-        val response = client.get("http://10.0.2.2:8081/broker"){
+        val url = apiRoutes.getUrl("broker_get")
+
+        val response = client.get(url){
             contentType(ContentType.Application.Json)
 
             params.uuid?.let { parameter("uuid", it) }

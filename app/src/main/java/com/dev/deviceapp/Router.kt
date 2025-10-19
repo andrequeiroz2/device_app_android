@@ -1,17 +1,22 @@
 package com.dev.deviceapp
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.dev.deviceapp.repository.device.BluetoothScanner
 import com.dev.deviceapp.repository.login.TokenRepository
 import com.dev.deviceapp.view.broker.BrokerCreateScreen
 import com.dev.deviceapp.view.broker.BrokerDetailScreen
 import com.dev.deviceapp.view.broker.BrokerGetFilterScreen
 import com.dev.deviceapp.view.broker.BrokerTreeScreen
 import com.dev.deviceapp.view.broker.BrokerUpdateScreen
+import com.dev.deviceapp.view.device.DeviceTreeScreen
+import com.dev.deviceapp.view.device.DeviveBleScanListScreen
 import com.dev.deviceapp.view.login.LoginScreen
 import com.dev.deviceapp.view.mainscreen.MainScreen
 import com.dev.deviceapp.view.profile.ProfileScreen
@@ -43,6 +48,10 @@ object AppDestinations{
     const val BROKER_DETAIL_SCREEN = "brokerDetailScreen"
     const val BROKER_UPDATE_SCREEN = "brokerUpdateScreen"
 
+    //Device Crud
+    const val DEVICE_TREE_SCREEN = "deviceTreeScreen"
+
+    const val DEVICE_BLE_SCAN_SCREEN = "deviceBleScanScreen"
 }
 
 
@@ -52,6 +61,7 @@ interface TokenRepositoryEntryPoint {
     fun tokenRepository(): TokenRepository
 }
 
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun AppNavigation(){
 
@@ -126,6 +136,20 @@ fun AppNavigation(){
 
         composable(route = AppDestinations.BROKER_UPDATE_SCREEN){
             BrokerUpdateScreen(navController = navController)
+        }
+
+        composable(route = AppDestinations.DEVICE_TREE_SCREEN){
+            DeviceTreeScreen(navController = navController)
+        }
+
+        composable(route = AppDestinations.DEVICE_BLE_SCAN_SCREEN) {
+            val context = LocalContext.current
+            val scanner = remember { BluetoothScanner(context) }
+
+            DeviveBleScanListScreen(
+                scanner = scanner,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

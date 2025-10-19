@@ -85,6 +85,17 @@ fun MainScreen(
                         navController.navigate(AppDestinations.BROKER_TREE_SCREEN)
                     }
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                NavigationDrawerItem(
+                    label = { Text("Device", color = Color.White) },
+                    selected = false,
+                    onClick = {
+                        scope.launch { drawerState.close() }
+                        navController.navigate(AppDestinations.DEVICE_TREE_SCREEN)
+                    }
+                )
             }
         }
     ) {

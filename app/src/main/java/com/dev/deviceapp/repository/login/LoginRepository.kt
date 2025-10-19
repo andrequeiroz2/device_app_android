@@ -1,7 +1,9 @@
 package com.dev.deviceapp.repository.login
 
+import android.content.Context
 import com.dev.deviceapp.model.login.LoginRequest
 import com.dev.deviceapp.model.login.LoginResponse
+import com.dev.deviceapp.config.ApiRoutes
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import jakarta.inject.Inject
@@ -9,13 +11,21 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.*
 import jakarta.inject.Named
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 
 class LoginRepository @Inject constructor(
-    @Named("HttpClientUnauthenticated") private val client: HttpClient
+    @Named("HttpClientUnauthenticated") private val client: HttpClient,
+    @ApplicationContext private val context: Context
 ) {
+
+    private val apiRoutes = ApiRoutes(context)
+
     suspend fun login(login: LoginRequest): LoginResponse {
-        val response = client.post("http://10.0.2.2:8081/login") {
+
+        val url = apiRoutes.getUrl("login")
+
+        val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(login)
         }

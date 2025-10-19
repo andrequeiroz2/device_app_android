@@ -11,21 +11,143 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import android.Manifest
+import kotlinx.coroutines.delay
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
+import com.dev.deviceapp.model.device.DeviceBleModel
 import com.dev.deviceapp.repository.device.BluetoothScanner
+
+//@RequiresApi(Build.VERSION_CODES.S)
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun DeviveBleScanListScreen(
+//    scanner: BluetoothScanner,
+//    onBack: () -> Unit,
+//    onDeviceClick: (DeviceBleModel) -> Unit
+//) {
+//    var devices by remember { mutableStateOf(listOf<Pair<String, String>>()) } // (name, mac)
+//    var isScanning by remember { mutableStateOf(false) }
+//    var latestDeviceAddress by remember { mutableStateOf<String?>(null) } // Para destacar novo dispositivo
+//
+//    // Verifica permissão BLE
+//    val hasPermission = ContextCompat.checkSelfPermission(
+//        scanner.context,
+//        Manifest.permission.BLUETOOTH_SCAN
+//    ) == PackageManager.PERMISSION_GRANTED
+//
+//    DisposableEffect(Unit) {
+//        if (hasPermission) {
+//            isScanning = true
+//
+//            scanner.startScan { result ->
+//                val device = result.device
+//                val name = device.name ?: "Unknown"
+//                val address = device.address ?: "N/A"
+//
+//                if (devices.none { it.second == address }) {
+//                    devices = devices + (name to address)
+//                    latestDeviceAddress = address
+//                }
+//            }
+//        }
+//
+//        onDispose {
+//            scanner.stopScan()
+//            isScanning = false
+//        }
+//    }
+//
+//    Surface(
+//        modifier = Modifier.fillMaxSize(),
+//        color = MaterialTheme.colorScheme.background
+//    ) {
+//        Column(modifier = Modifier.padding(16.dp)) {
+//            Text(
+//                text = if (isScanning) "Scanning... (${devices.size} found)"
+//                else "Available Devices (${devices.size})",
+//                style = MaterialTheme.typography.headlineSmall
+//            )
+//
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            LazyColumn(modifier = Modifier.weight(1f)) {
+//                items(devices) { (name, address) ->
+//                    val isNew = address == latestDeviceAddress
+//
+//                    // Animação de cor para destaque do novo dispositivo
+//                    val cardColor by animateColorAsState(
+//                        targetValue = if (isNew)
+//                            MaterialTheme.colorScheme.primaryContainer
+//                        else
+//                            MaterialTheme.colorScheme.surfaceVariant,
+//                        animationSpec = tween(durationMillis = 800)
+//                    )
+//
+//                    Card(
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .padding(vertical = 4.dp),
+//                        colors = CardDefaults.cardColors(
+//                            containerColor = cardColor
+//                        )
+//                    ) {
+//                        Column(modifier = Modifier.padding(16.dp)) {
+//                            Text(text = name, style = MaterialTheme.typography.bodyLarge)
+//                            Text(text = address, style = MaterialTheme.typography.bodyMedium)
+//                        }
+//                    }
+//
+//                    // Reseta o destaque após renderizar
+//                    if (isNew) {
+//                        LaunchedEffect(address) {
+//                            kotlinx.coroutines.delay(800)
+//                            latestDeviceAddress = null
+//                        }
+//                    }
+//                }
+//            }
+//
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+//                Button(
+//                    onClick = {
+//                        scanner.stopScan()
+//                        isScanning = false
+//                    },
+//                    enabled = isScanning,
+//                    modifier = Modifier.weight(1f)
+//                ) {
+//                    Text("Stop Scan")
+//                }
+//
+//                Button(
+//                    onClick = {
+//                        scanner.stopScan()
+//                        onBack()
+//                    },
+//                    modifier = Modifier.weight(1f)
+//                ) {
+//                    Text("Back")
+//                }
+//            }
+//        }
+//    }
+//}
 
 @RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviveBleScanListScreen(
     scanner: BluetoothScanner,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onDeviceClick: (DeviceBleModel) -> Unit // Novo callback ao clicar em um device
 ) {
-    var devices by remember { mutableStateOf(listOf<Pair<String, String>>()) } // (name, mac)
+    var devices by remember { mutableStateOf(listOf<DeviceBleModel>()) }
     var isScanning by remember { mutableStateOf(false) }
-    var latestDeviceAddress by remember { mutableStateOf<String?>(null) } // Para destacar novo dispositivo
+    var latestDeviceAddress by remember { mutableStateOf<String?>(null) }
 
     // Verifica permissão BLE
     val hasPermission = ContextCompat.checkSelfPermission(
@@ -37,14 +159,10 @@ fun DeviveBleScanListScreen(
         if (hasPermission) {
             isScanning = true
 
-            scanner.startScan { result ->
-                val device = result.device
-                val name = device.name ?: "Unknown"
-                val address = device.address ?: "N/A"
-
-                if (devices.none { it.second == address }) {
-                    devices = devices + (name to address)
-                    latestDeviceAddress = address
+            scanner.startScan { bleDevice ->
+                if (devices.none { it.address == bleDevice.address }) {
+                    devices = devices + bleDevice
+                    latestDeviceAddress = bleDevice.address
                 }
             }
         }
@@ -69,10 +187,9 @@ fun DeviveBleScanListScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(modifier = Modifier.weight(1f)) {
-                items(devices) { (name, address) ->
-                    val isNew = address == latestDeviceAddress
+                items(devices) { device ->
+                    val isNew = device.address == latestDeviceAddress
 
-                    // Animação de cor para destaque do novo dispositivo
                     val cardColor by animateColorAsState(
                         targetValue = if (isNew)
                             MaterialTheme.colorScheme.primaryContainer
@@ -84,21 +201,37 @@ fun DeviveBleScanListScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = 4.dp)
+                            .clickable { onDeviceClick(device) }, // Clicável!
                         colors = CardDefaults.cardColors(
                             containerColor = cardColor
                         )
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = name, style = MaterialTheme.typography.bodyLarge)
-                            Text(text = address, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = "Name: ${device.name}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = "Address: ${device.address}",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "RSSI: ${device.rssi} dBm",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            if (device.uuids.isNotEmpty()) {
+                                Text(
+                                    text = "Services: ${device.uuids.joinToString()}",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     }
 
-                    // Reseta o destaque após renderizar
                     if (isNew) {
-                        LaunchedEffect(address) {
-                            kotlinx.coroutines.delay(800)
+                        LaunchedEffect(device.address) {
+                            delay(800)
                             latestDeviceAddress = null
                         }
                     }
@@ -107,7 +240,10 @@ fun DeviveBleScanListScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Button(
                     onClick = {
                         scanner.stopScan()
@@ -132,5 +268,4 @@ fun DeviveBleScanListScreen(
         }
     }
 }
-
 

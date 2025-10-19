@@ -62,6 +62,24 @@ fun DeviceTreeScreen(
                 ) {
                     Text("Adoption")
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(
+                    onClick = {
+                        navController.popBackStack()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00A86B),
+                        contentColor = Color.White
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Back")
+                }
             }
         }
     }

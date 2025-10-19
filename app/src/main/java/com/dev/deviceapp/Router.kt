@@ -148,7 +148,13 @@ fun AppNavigation(){
 
             DeviveBleScanListScreen(
                 scanner = scanner,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onDeviceClick = { bleDevice ->
+                    // Aqui você decide o que fazer quando o usuário clicar em um device BLE
+                    // Exemplo: navegar para outra tela passando o endereço do dispositivo
+                    //navController.navigate("${AppDestinations.DEVICE_ADOPT_SCREEN}/${bleDevice.address}")
+                    navController.navigate("")
+                }
             )
         }
     }

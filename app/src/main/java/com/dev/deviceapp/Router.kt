@@ -15,6 +15,7 @@ import com.dev.deviceapp.view.broker.BrokerDetailScreen
 import com.dev.deviceapp.view.broker.BrokerGetFilterScreen
 import com.dev.deviceapp.view.broker.BrokerTreeScreen
 import com.dev.deviceapp.view.broker.BrokerUpdateScreen
+import com.dev.deviceapp.view.device.DeviceCharacteristicReadInfoScreen
 import com.dev.deviceapp.view.device.DeviceTreeScreen
 import com.dev.deviceapp.view.device.DeviveBleScanListScreen
 import com.dev.deviceapp.view.login.LoginScreen
@@ -51,7 +52,10 @@ object AppDestinations{
     //Device Crud
     const val DEVICE_TREE_SCREEN = "deviceTreeScreen"
 
+    //BLE
     const val DEVICE_BLE_SCAN_SCREEN = "deviceBleScanScreen"
+//    const val DEVICE_ADOPTION_SCREEN = "deviceAdoptionScreen"
+    const val DEVICE_OPTION_TREE_SCREEN = "deviceCharacteristicReadInfoScreen"
 }
 
 
@@ -62,6 +66,7 @@ interface TokenRepositoryEntryPoint {
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
+@androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
 fun AppNavigation(){
 
@@ -147,14 +152,28 @@ fun AppNavigation(){
             val scanner = remember { BluetoothScanner(context) }
 
             DeviveBleScanListScreen(
+                navController = navController,
                 scanner = scanner,
                 onBack = { navController.popBackStack() },
                 onDeviceClick = { bleDevice ->
-                    // Aqui você decide o que fazer quando o usuário clicar em um device BLE
-                    // Exemplo: navegar para outra tela passando o endereço do dispositivo
-                    //navController.navigate("${AppDestinations.DEVICE_ADOPT_SCREEN}/${bleDevice.address}")
-                    navController.navigate("")
+                    navController.navigate(
+                        "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}/${bleDevice.address}"
+                    )
                 }
+            )
+        }
+
+
+        composable(
+            route = "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}/{deviceAddress}"
+        )  { backStackEntry ->
+            val deviceAddress = backStackEntry.arguments?.getString("deviceAddress")
+            val context = LocalContext.current
+
+            DeviceCharacteristicReadInfoScreen(
+                navController = navController,
+                deviceAddress = deviceAddress,
+                context = context
             )
         }
     }

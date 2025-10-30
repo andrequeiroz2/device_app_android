@@ -1,57 +1,59 @@
 package com.dev.deviceapp.view.device
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import android.Manifest
-import kotlinx.coroutines.delay
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.model.device.DeviceBleModel
-import com.dev.deviceapp.repository.device.BluetoothScanner
+import com.dev.deviceapp.viewmodel.device.DeviceBleScanViewModel
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
-
-
+import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviveBleScanListScreen(
     navController: NavController,
-    viewModel: ProfileViewModel = hiltViewModel(),
-    scanner: BluetoothScanner,
+    authViewModel: ProfileViewModel = hiltViewModel(),
+    scanViewModel: DeviceBleScanViewModel = hiltViewModel(),
     onBack: () -> Unit,
     onDeviceClick: (DeviceBleModel) -> Unit,
     onLogout: () -> Unit = {}
 ) {
-
     val context = LocalContext.current
-    var devices by remember { mutableStateOf(listOf<DeviceBleModel>()) }
-    var isScanning by remember { mutableStateOf(false) }
-    var latestDeviceAddress by remember { mutableStateOf<String?>(null) }
-    val tokenInfo = viewModel.tokenInfo
 
+    // State is now collected from the ViewModel
+    val devices by scanViewModel.scannedDevices.collectAsState()
+    val isScanning by scanViewModel.isScanning.collectAsState()
+
+    var latestDeviceAddress by remember { mutableStateOf<String?>(null) }
+    var previousDevices by remember { mutableStateOf(emptyList<DeviceBleModel>()) }
+
+    val tokenInfo = authViewModel.tokenInfo
     Log.d("DeviveBleScanListScreen", "$tokenInfo")
 
     val hasPermission = ContextCompat.checkSelfPermission(
-        scanner.context,
+        context,
         Manifest.permission.BLUETOOTH_SCAN
     ) == PackageManager.PERMISSION_GRANTED
 
@@ -61,16 +63,19 @@ fun DeviveBleScanListScreen(
         return
     }
 
+    // Detects a new device to trigger the highlight animation
+    LaunchedEffect(devices) {
+        val newDevice = devices.find { d -> previousDevices.none { it.address == d.address } }
+        if (newDevice != null) {
+            latestDeviceAddress = newDevice.address
+        }
+        previousDevices = devices
+    }
+
+    // Lifecycle-aware scanning
     DisposableEffect(Unit) {
         if (hasPermission) {
-            isScanning = true
-
-            scanner.startScan { bleDevice ->
-                if (devices.none { it.address == bleDevice.address }) {
-                    devices = devices + bleDevice
-                    latestDeviceAddress = bleDevice.address
-                }
-            }
+            scanViewModel.startScan()
         } else {
             Log.e("DeviceBleScanListScreen", "Missing Bluetooth permissions")
             Toast.makeText(
@@ -82,8 +87,7 @@ fun DeviveBleScanListScreen(
         }
 
         onDispose {
-            scanner.stopScan()
-            isScanning = false
+            scanViewModel.stopScan()
         }
     }
 
@@ -113,7 +117,7 @@ fun DeviveBleScanListScreen(
                         .weight(1f)
                         .fillMaxWidth()
                 ) {
-                    items(devices) { device ->
+                    items(devices, key = { it.address }) { device ->
                         val isNew = device.address == latestDeviceAddress
                         val cardColor by animateColorAsState(
                             targetValue = if (isNew)
@@ -123,15 +127,11 @@ fun DeviveBleScanListScreen(
                             animationSpec = tween(800)
                         )
 
-                        Log.i("DeviveBleScanListScreen", "$device")
-
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp)
-                                .clickable {
-                                    onDeviceClick(device)
-                                },
+                                .clickable { onDeviceClick(device) },
                             colors = CardDefaults.cardColors(containerColor = cardColor),
                             shape = MaterialTheme.shapes.medium
                         ) {
@@ -184,10 +184,7 @@ fun DeviveBleScanListScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
-                        onClick = {
-                            scanner.stopScan()
-                            isScanning = false
-                        },
+                        onClick = { scanViewModel.stopScan() },
                         enabled = isScanning,
                         modifier = Modifier
                             .weight(1f)
@@ -202,7 +199,7 @@ fun DeviveBleScanListScreen(
 
                     Button(
                         onClick = {
-                            scanner.stopScan()
+                            scanViewModel.stopScan()
                             onBack()
                         },
                         modifier = Modifier

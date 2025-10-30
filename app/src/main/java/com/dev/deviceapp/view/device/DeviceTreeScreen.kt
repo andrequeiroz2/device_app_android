@@ -1,5 +1,8 @@
 package com.dev.deviceapp.view.device
 
+import android.os.Build
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,15 +21,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
+import com.dev.deviceapp.permission.haveAllPermissions
 
 @OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun DeviceTreeScreen(
     navController: NavController,
 ){
+    val context = LocalContext.current
+
     Box(modifier = Modifier.fillMaxSize()) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -49,7 +57,11 @@ fun DeviceTreeScreen(
 
                 Button(
                     onClick = {
-                        navController.navigate(AppDestinations.DEVICE_BLE_SCAN_SCREEN)
+                        if (haveAllPermissions(context)) {
+                            navController.navigate(AppDestinations.DEVICE_BLE_SCAN_LIST_SCREEN)
+                        } else {
+                            Toast.makeText(context, "Bluetooth permissions are required", Toast.LENGTH_SHORT).show()
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -60,7 +72,7 @@ fun DeviceTreeScreen(
                     ),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Text("Adoption")
+                    Text("Scan devices")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

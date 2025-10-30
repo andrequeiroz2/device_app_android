@@ -11,17 +11,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
-import com.dev.deviceapp.AppNavigation
 import com.dev.deviceapp.model.user.UserGetRequest
 import com.dev.deviceapp.model.user.UserSuccess
-import com.dev.deviceapp.model.user.UserUpdateResponse
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import com.dev.deviceapp.viewmodel.user.UserGetUiState
 import com.dev.deviceapp.viewmodel.user.UserGetViewModel
-
 
 @Composable
 fun ProfileScreen(
@@ -68,7 +66,7 @@ fun ProfileScreen(
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.5f)),
                     contentAlignment = Alignment.Center
-                ){
+                ) {
                     CircularProgressIndicator(color = Color(0xFF00A86B))
                 }
             }
@@ -83,7 +81,6 @@ fun ProfileScreen(
                     verticalArrangement = Arrangement.Top,
                     horizontalAlignment = Alignment.Start
                 ) {
-
                     Text(
                         "Profile",
                         style = MaterialTheme.typography.headlineMedium,
@@ -96,7 +93,6 @@ fun ProfileScreen(
                         Text("👤 Name: ${user.username}", color = Color.White)
                         Text("📧 Email: ${user.email}", color = Color.White)
                     }
-
 
                     Spacer(modifier = Modifier.height(32.dp))
 
@@ -167,7 +163,6 @@ fun ProfileScreen(
                     Button(
                         onClick = {
                             viewModel.logout()
-                            onLogout()
                         },
                         modifier = Modifier
                             .fillMaxWidth()

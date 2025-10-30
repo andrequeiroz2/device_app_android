@@ -1,14 +1,16 @@
 package com.dev.deviceapp
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.dev.deviceapp.repository.device.BluetoothScanner
 import com.dev.deviceapp.repository.login.TokenRepository
 import com.dev.deviceapp.view.broker.BrokerCreateScreen
 import com.dev.deviceapp.view.broker.BrokerDetailScreen
@@ -26,35 +28,25 @@ import com.dev.deviceapp.view.user.UserDeleteScreen
 import com.dev.deviceapp.view.user.UserUpdateScreen
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 
 
-object AppDestinations{
+
+object AppDestinations {
     const val MAIN_SCREEN = "mainScreen"
-
-    //Login
     const val LOGIN_SCREEN = "loginScreen"
-
-    //User Crud
     const val USER_CREATE_SCREEN = "userCreateScreen"
     const val PROFILE_SCREEN = "registerScreen"
     const val USER_UPDATE_SCREEN = "userUpdateScreen"
     const val USER_DELETE_SCREEN = "userDeleteScreen"
-
-    //Broker Crud
     const val BROKER_TREE_SCREEN = "brokerTreeScreen"
     const val BROKER_CREATE_SCREEN = "brokerCreateScreen"
     const val BROKER_GET_FILTER_SCREEN = "brokerGetFilterScreen"
     const val BROKER_DETAIL_SCREEN = "brokerDetailScreen"
     const val BROKER_UPDATE_SCREEN = "brokerUpdateScreen"
-
-    //Device Crud
     const val DEVICE_TREE_SCREEN = "deviceTreeScreen"
-
-    //BLE
-    const val DEVICE_BLE_SCAN_SCREEN = "deviceBleScanScreen"
-//    const val DEVICE_ADOPTION_SCREEN = "deviceAdoptionScreen"
+    const val DEVICE_BLE_SCAN_LIST_SCREEN = "deviceBleScanListScreen"
     const val DEVICE_OPTION_TREE_SCREEN = "deviceCharacteristicReadInfoScreen"
 }
 
@@ -68,8 +60,8 @@ interface TokenRepositoryEntryPoint {
 @RequiresApi(Build.VERSION_CODES.S)
 @androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
 @Composable
-fun AppNavigation(){
-
+fun AppNavigation() {
+    val navController = rememberNavController()
     val context = LocalContext.current
 
     val tokenRepository = remember {
@@ -79,11 +71,11 @@ fun AppNavigation(){
         ).tokenRepository()
     }
 
-    val navController = rememberNavController()
-
     val startDestination = if (tokenRepository.getToken() != null) {
+        Log.i("AppNavigation", "token: ${tokenRepository.getToken()}")
         AppDestinations.MAIN_SCREEN
     } else {
+        Log.i("AppNavigation", "token: ${tokenRepository.getToken()}")
         AppDestinations.LOGIN_SCREEN
     }
 
@@ -98,75 +90,71 @@ fun AppNavigation(){
     NavHost(
         navController = navController,
         startDestination = startDestination
-    ){
-        composable(route = AppDestinations.MAIN_SCREEN){
+    ) {
+        composable(route = AppDestinations.MAIN_SCREEN) {
             MainScreen(navController = navController, onLogout = onLogout)
         }
 
-        composable(route = AppDestinations.LOGIN_SCREEN){
+        composable(route = AppDestinations.LOGIN_SCREEN) {
             LoginScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.PROFILE_SCREEN){
+        composable(route = AppDestinations.PROFILE_SCREEN) {
             ProfileScreen(navController = navController, onLogout = onLogout)
         }
 
-        composable(route = AppDestinations.USER_CREATE_SCREEN){
+        composable(route = AppDestinations.USER_CREATE_SCREEN) {
             UserCreateScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.USER_UPDATE_SCREEN){
+        composable(route = AppDestinations.USER_UPDATE_SCREEN) {
             UserUpdateScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.USER_DELETE_SCREEN){
+        composable(route = AppDestinations.USER_DELETE_SCREEN) {
             UserDeleteScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.BROKER_TREE_SCREEN){
+        composable(route = AppDestinations.BROKER_TREE_SCREEN) {
             BrokerTreeScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.BROKER_CREATE_SCREEN){
+        composable(route = AppDestinations.BROKER_CREATE_SCREEN) {
             BrokerCreateScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.BROKER_GET_FILTER_SCREEN){
+        composable(route = AppDestinations.BROKER_GET_FILTER_SCREEN) {
             BrokerGetFilterScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.BROKER_DETAIL_SCREEN){
+        composable(route = AppDestinations.BROKER_DETAIL_SCREEN) {
             BrokerDetailScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.BROKER_UPDATE_SCREEN){
+        composable(route = AppDestinations.BROKER_UPDATE_SCREEN) {
             BrokerUpdateScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.DEVICE_TREE_SCREEN){
+        composable(route = AppDestinations.DEVICE_TREE_SCREEN) {
             DeviceTreeScreen(navController = navController)
         }
 
-        composable(route = AppDestinations.DEVICE_BLE_SCAN_SCREEN) {
-            val context = LocalContext.current
-            val scanner = remember { BluetoothScanner(context) }
-
+        composable(route = AppDestinations.DEVICE_BLE_SCAN_LIST_SCREEN) {
             DeviveBleScanListScreen(
                 navController = navController,
-                scanner = scanner,
                 onBack = { navController.popBackStack() },
                 onDeviceClick = { bleDevice ->
                     navController.navigate(
                         "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}/${bleDevice.address}"
                     )
-                }
+                },
+                onLogout = onLogout
             )
         }
 
-
         composable(
             route = "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}/{deviceAddress}"
-        )  { backStackEntry ->
+        ) { backStackEntry ->
             val deviceAddress = backStackEntry.arguments?.getString("deviceAddress")
             val context = LocalContext.current
 

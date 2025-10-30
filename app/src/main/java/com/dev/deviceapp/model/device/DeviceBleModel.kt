@@ -1,16 +1,6 @@
 package com.dev.deviceapp.model.device
 
-import java.util.UUID
-
-
-fun getDeviceInfoServiceUUID(): UUID =
-    UUID.fromString("19b10000-e8f2-537e-4f6c-d104768a1214")
-
-fun getDeviceInfoCharUUID(): UUID =
-    UUID.fromString("19b10003-e8f2-537e-4f6c-d104768a1214")
-
-fun getClientConfigUUID(): UUID =
-    UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+import kotlinx.serialization.Serializable
 
 data class DeviceBleModel(
     val name: String,
@@ -43,8 +33,8 @@ data class DeviceBleModel(
     }
 }
 
-
-data class DeviceInfoModel(
+@Serializable
+data class DeviceBleInfoModel(
     val boarder_type: String = "",
     val mac_address: String = "",
     val device_type: String = "",
@@ -54,7 +44,7 @@ data class DeviceInfoModel(
     val adopted_status_desc: String = "",
     val broker_url: String = "",
     val topic: String = "",
-    val device_scale: List<String> = emptyList(),
+    val device_scale: List<List<String>> = emptyList(),
     val user_uuid: String = "",
     val device_uuid: String = "",
     val device_name: String = ""

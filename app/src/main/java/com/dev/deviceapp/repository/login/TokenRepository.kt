@@ -3,8 +3,8 @@ package com.dev.deviceapp.repository.login
 import android.util.Base64
 import android.util.Log
 import com.dev.deviceapp.model.token.TokenInfo
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
+import javax.inject.Inject
+import javax.inject.Singleton
 import org.json.JSONObject
 
 

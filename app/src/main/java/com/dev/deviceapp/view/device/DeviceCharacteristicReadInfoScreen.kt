@@ -23,9 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.ble.BleConstants
 import com.dev.deviceapp.model.device.DeviceBleInfoModel
+import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
@@ -39,13 +41,18 @@ import kotlin.coroutines.resumeWithException
 @Composable
 fun DeviceCharacteristicReadInfoScreen(
     navController: NavController,
+    authViewModel: ProfileViewModel = hiltViewModel(),
     deviceAddress: String?,
     context: Context
 ) {
     var deviceInfo by remember { mutableStateOf<JSONObject?>(null) }
     var isLoading by remember { mutableStateOf(true) }
+
     val serviceUuid = BleConstants.BLE_SERVICE_UUID
     val characteristicUuid = BleConstants.BLE_DEVICE_INFO_UUID
+    val tokenInfo = authViewModel.tokenInfo
+    Log.i("app", "tokenInfo: $tokenInfo")
+
 
     LaunchedEffect(deviceAddress) {
         if (deviceAddress.isNullOrEmpty()) {
@@ -55,8 +62,7 @@ fun DeviceCharacteristicReadInfoScreen(
         }
 
         val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-        val adapter = bluetoothManager?.adapter
-        val device = adapter?.getRemoteDevice(deviceAddress)
+        val device = bluetoothManager?.adapter?.getRemoteDevice(deviceAddress)
 
         if (device == null) {
             Toast.makeText(context, "Device not found", Toast.LENGTH_LONG).show()
@@ -65,21 +71,44 @@ fun DeviceCharacteristicReadInfoScreen(
         }
 
         try {
-            deviceInfo = readDeviceInfo(
+            val info = readDeviceInfo(
                 context = context,
                 device = device,
                 serviceUuid = serviceUuid,
                 characteristicUuid = characteristicUuid
             )
+
+            val parsed = Json.decodeFromString<DeviceBleInfoModel>(info.toString())
+
+            if (parsed.user_uuid.isNotEmpty() && parsed.device_uuid != tokenInfo?.uuid) {
+                Toast.makeText(
+                    context,
+                    "The device is already paired with another user",
+                    Toast.LENGTH_LONG
+                ).show()
+
+                Log.i(
+                    "BLE",
+                    "The device is already paired: device userUUID=${parsed.user_uuid}, token userUUID=${tokenInfo?.uuid}"
+                )
+
+                navController.popBackStack()
+                return@LaunchedEffect
+            }
+
+            deviceInfo = info
+
         } catch (e: Exception) {
             Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
             Log.e("BLE", "Error reading device info", e)
+            navController.popBackStack()
         } finally {
             isLoading = false
         }
     }
 
     Scaffold(
+        containerColor = Color.Black,
         topBar = {
             TopAppBar(
                 title = { Text("Device Information", maxLines = 1, overflow = TextOverflow.Ellipsis) },
@@ -97,13 +126,12 @@ fun DeviceCharacteristicReadInfoScreen(
                 .padding(16.dp)
                 .fillMaxSize()
         ) {
-
             if (isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    CircularProgressIndicator(color = Color(0xFF00A86B)) // verde
+                    CircularProgressIndicator(color = Color(0xFF00A86B))
                 }
             } else if (deviceInfo != null) {
                 val parsedDevice = remember(deviceInfo) {
@@ -136,17 +164,9 @@ fun DeviceCharacteristicReadInfoScreen(
 
                         if (device.device_scale.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Device Scale:",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = Color(0xFF00A86B)
-                            )
+                            Text("Device Scale:", color = Color(0xFF00A86B))
                             device.device_scale.forEach { scale ->
-                                Text(
-                                    text = "- ${scale.joinToString(" → ")}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.White
-                                )
+                                Text(scale.joinToString(" → "), color = Color.White)
                             }
                         }
                     }
@@ -159,8 +179,8 @@ fun DeviceCharacteristicReadInfoScreen(
 @Composable
 private fun DetailRow(label: String, value: String, valueColor: Color = Color.White) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(text = label, style = MaterialTheme.typography.labelMedium, color = Color(0xFF00A86B))
-        Text(text = value.ifEmpty { "—" }, style = MaterialTheme.typography.bodyMedium, color = valueColor)
+        Text(label, color = Color(0xFF00A86B))
+        Text(value.ifEmpty { "—" }, color = valueColor)
     }
 }
 
@@ -193,19 +213,12 @@ suspend fun readDeviceInfo(
                         operationCompleted = true
                         val currentData = receivedData.toString()
                         if (currentData.isNotEmpty()) {
-                            try {
-                                val fallbackJson = JSONObject().apply {
-                                    put("raw_data", currentData)
-                                    put("partial_data", true)
-                                    put("received_chars", currentData.length)
-                                }
-                                cont.resume(fallbackJson)
-                            } catch (e: Exception) {
-                                Log.e("BLE", "Incomplete data received", e)
-                                cont.resumeWithException(Exception("Incomplete data received"))
-                            }
+                            val fallbackJson = JSONObject()
+                            fallbackJson.put("raw_data", currentData)
+                            fallbackJson.put("partial_data", true)
+                            fallbackJson.put("received_chars", currentData.length)
+                            cont.resume(fallbackJson)
                         } else {
-                            Log.e("BLE", "No data received from device")
                             cont.resumeWithException(Exception("No data received from device"))
                         }
                         cleanup()
@@ -260,8 +273,7 @@ suspend fun readDeviceInfo(
                     }
 
                     gattLocal.setCharacteristicNotification(characteristic, true)
-                    val bleClientUuid = BleConstants.BLE_CLIENT_UUID
-                    val descriptor = characteristic.getDescriptor(bleClientUuid)
+                    val descriptor = characteristic.getDescriptor(BleConstants.BLE_CLIENT_UUID)
                     descriptor?.let {
                         gattLocal.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
                     }
@@ -301,7 +313,7 @@ suspend fun readDeviceInfo(
                                 cleanup()
                             }
                         } catch (e: Exception) {
-                            Log.e("BLE", "Incomplete data received", e)
+                            Log.e("BLE", "Error parsing JSON", e)
                             resetChunkTimeout()
                         }
                     }
@@ -309,7 +321,6 @@ suspend fun readDeviceInfo(
             }
 
             gatt = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
-
             cont.invokeOnCancellation {
                 operationCompleted = true
                 cleanup()

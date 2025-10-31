@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.model.device.DeviceBleModel
@@ -106,7 +105,7 @@ fun DeviveBleScanListScreen(
                 Text(
                     text = if (isScanning) "Scanning... (${devices.size})"
                     else "Available Devices (${devices.size})",
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = MaterialTheme.typography.headlineMedium,
                     color = Color(0xFF00A86B)
                 )
 

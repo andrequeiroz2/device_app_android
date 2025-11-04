@@ -1,10 +1,6 @@
 package com.dev.deviceapp.view.device
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
-import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -19,75 +15,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dev.deviceapp.AppDestinations
-import com.dev.deviceapp.model.device.DeviceBleModel
 import com.dev.deviceapp.viewmodel.device.DeviceBleScanViewModel
-import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
+import com.dev.deviceapp.model.device.DeviceBleModel
 import kotlinx.coroutines.delay
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 
-@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun DeviveBleScanListScreen(
     navController: NavController,
-    authViewModel: ProfileViewModel = hiltViewModel(),
-    scanViewModel: DeviceBleScanViewModel = hiltViewModel(),
-    onBack: () -> Unit,
-    onDeviceClick: (DeviceBleModel) -> Unit,
-    onLogout: () -> Unit = {}
+    scanViewModel: DeviceBleScanViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
 
-    // State is now collected from the ViewModel
     val devices by scanViewModel.scannedDevices.collectAsState()
     val isScanning by scanViewModel.isScanning.collectAsState()
 
     var latestDeviceAddress by remember { mutableStateOf<String?>(null) }
     var previousDevices by remember { mutableStateOf(emptyList<DeviceBleModel>()) }
 
-    val tokenInfo = authViewModel.tokenInfo
-    Log.d("DeviveBleScanListScreen", "$tokenInfo")
-
-    val hasPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.BLUETOOTH_SCAN
-    ) == PackageManager.PERMISSION_GRANTED
-
-    if (tokenInfo == null) {
-        Log.e("DeviveBleScanListScreen", "Token is null")
-        LaunchedEffect(Unit) { onLogout() }
-        return
-    }
-
-    // Detects a new device to trigger the highlight animation
+    // Detecta novo dispositivo para animação
     LaunchedEffect(devices) {
         val newDevice = devices.find { d -> previousDevices.none { it.address == d.address } }
         if (newDevice != null) {
             latestDeviceAddress = newDevice.address
         }
         previousDevices = devices
-    }
-
-    // Lifecycle-aware scanning
-    DisposableEffect(Unit) {
-        if (hasPermission) {
-            scanViewModel.startScan()
-        } else {
-            Log.e("DeviceBleScanListScreen", "Missing Bluetooth permissions")
-            Toast.makeText(
-                context,
-                "This app requires Bluetooth permissions. Please enable them in your settings",
-                Toast.LENGTH_LONG
-            ).show()
-            navController.navigate(AppDestinations.MAIN_SCREEN)
-        }
-
-        onDispose {
-            scanViewModel.stopScan()
-        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -98,7 +56,7 @@ fun DeviveBleScanListScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(40.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -109,7 +67,7 @@ fun DeviveBleScanListScreen(
                     color = Color(0xFF00A86B)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(
                     modifier = Modifier
@@ -130,37 +88,19 @@ fun DeviveBleScanListScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 6.dp)
-                                .clickable { onDeviceClick(device) },
+                                .clickable {
+                                    navController.navigate("${AppDestinations.DEVICE_OPTION_TREE_SCREEN}?deviceMac=${device.address}")
+                                },
                             colors = CardDefaults.cardColors(containerColor = cardColor),
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                            ) {
-                                Text(
-                                    text = device.name.ifEmpty { "Unnamed Device" },
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Address: ${device.address}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color.LightGray
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "RSSI: ${device.rssi} dBm",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
-                                )
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(device.name.ifEmpty { "Unnamed Device" }, color = Color.White)
+                                Text("Address: ${device.address}", color = Color.LightGray)
+                                Text("RSSI: ${device.rssi} dBm", color = Color.Gray)
                                 if (device.uuids.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "Services: ${device.uuids.joinToString()}",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        "Services: ${device.uuids.joinToString()}",
                                         color = Color.Gray
                                     )
                                 }
@@ -178,8 +118,11 @@ fun DeviveBleScanListScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // Botões Stop / Back
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 48.dp), // Ajuste para não ficar atrás da barra inferior
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Button(
@@ -191,28 +134,33 @@ fun DeviveBleScanListScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF00A86B),
                             contentColor = Color.White
-                        )
+                        ),
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text("Stop")
                     }
 
                     Button(
-                        onClick = {
-                            scanViewModel.stopScan()
-                            onBack()
-                        },
+                        onClick = { navController.popBackStack() },
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF00A86B),
                             contentColor = Color.White
-                        )
+                        ),
+                        shape = MaterialTheme.shapes.medium
                     ) {
                         Text("Back")
                     }
                 }
             }
         }
+    }
+
+    // Lifecycle-aware scanning
+    DisposableEffect(Unit) {
+        scanViewModel.startScan()
+        onDispose { scanViewModel.stopScan() }
     }
 }

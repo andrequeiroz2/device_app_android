@@ -4,20 +4,20 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.dev.deviceapp.repository.login.TokenRepository
 import com.dev.deviceapp.view.broker.BrokerCreateScreen
 import com.dev.deviceapp.view.broker.BrokerDetailScreen
 import com.dev.deviceapp.view.broker.BrokerGetFilterScreen
 import com.dev.deviceapp.view.broker.BrokerTreeScreen
 import com.dev.deviceapp.view.broker.BrokerUpdateScreen
-import com.dev.deviceapp.view.device.DeviceCharacteristicReadInfoScreen
+import com.dev.deviceapp.view.device.DeviceOptionsScreen
 import com.dev.deviceapp.view.device.DeviceTreeScreen
 import com.dev.deviceapp.view.device.DeviveBleScanListScreen
 import com.dev.deviceapp.view.login.LoginScreen
@@ -48,6 +48,8 @@ object AppDestinations {
     const val DEVICE_TREE_SCREEN = "deviceTreeScreen"
     const val DEVICE_BLE_SCAN_LIST_SCREEN = "deviceBleScanListScreen"
     const val DEVICE_OPTION_TREE_SCREEN = "deviceCharacteristicReadInfoScreen"
+
+    const val DEVICE_ADOPTION_SCREEN = "deviceAdoptionScreen"
 }
 
 
@@ -58,7 +60,7 @@ interface TokenRepositoryEntryPoint {
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
-@androidx.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
+@androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_CONNECT])
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -142,27 +144,27 @@ fun AppNavigation() {
         composable(route = AppDestinations.DEVICE_BLE_SCAN_LIST_SCREEN) {
             DeviveBleScanListScreen(
                 navController = navController,
-                onBack = { navController.popBackStack() },
-                onDeviceClick = { bleDevice ->
-                    navController.navigate(
-                        "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}/${bleDevice.address}"
-                    )
-                },
-                onLogout = onLogout
             )
         }
 
         composable(
-            route = "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}/{deviceAddress}"
+            route = "${AppDestinations.DEVICE_OPTION_TREE_SCREEN}?deviceMac={deviceMac}",
+            arguments = listOf(navArgument("deviceMac") { type = NavType.StringType })
         ) { backStackEntry ->
-            val deviceAddress = backStackEntry.arguments?.getString("deviceAddress")
-            val context = LocalContext.current
-
-            DeviceCharacteristicReadInfoScreen(
+            val deviceMac = backStackEntry.arguments?.getString("deviceMac")
+            DeviceOptionsScreen(
                 navController = navController,
-                deviceAddress = deviceAddress,
-                context = context
+                deviceMac = deviceMac
             )
         }
+
+//        composable(
+//            route = "${AppDestinations.DEVICE_ADOPTION_SCREEN}/{deviceAddress}"
+//        )  { backStackEntry ->
+//
+//            DeviceOptionsScreen(
+//                navController = navController,
+//            )
+//        }
     }
 }

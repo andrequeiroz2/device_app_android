@@ -22,4 +22,8 @@ class ConfigLoader(private val context: Context) {
     fun getBleDevicePrefixes(): List<String> {
         return properties.getProperty("BLE_DEVICE_PREFIXES", "").split(",").filter { it.isNotEmpty() }
     }
+
+    fun getBleCharacteristicInfo(): String {
+        return properties.getProperty("BLE_CHARACTERISTIC_INFO", "")
+    }
 }

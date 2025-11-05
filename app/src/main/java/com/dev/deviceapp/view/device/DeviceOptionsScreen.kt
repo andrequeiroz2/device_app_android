@@ -44,14 +44,6 @@ fun DeviceOptionsScreen(
         }
     }
 
-//    LaunchedEffect(deviceMac) {
-//        deviceMac?.let {
-//            val bt = android.bluetooth.BluetoothAdapter.getDefaultAdapter()
-//            val device = bt.getRemoteDevice(it)
-//            vm.loadDevice(device, context)
-//        }
-//    }
-
     val state by vm.uiState.collectAsState()
 
     LaunchedEffect(state) {
@@ -128,6 +120,7 @@ fun DeviceOptionsScreen(
                     ) {
                         Text("Adopt")
                     }
+
                 }
 
                 is DeviceOptionsUiState.Owner -> {
@@ -155,6 +148,22 @@ fun DeviceOptionsScreen(
                 }
 
                 is DeviceOptionsUiState.Error -> Unit
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            Button(
+                onClick = {
+                    navController.navigate("device/adopt/details/${deviceMac}")
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF00A86B),
+                    contentColor = Color.White
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Details")
             }
 
             Spacer(Modifier.height(20.dp))

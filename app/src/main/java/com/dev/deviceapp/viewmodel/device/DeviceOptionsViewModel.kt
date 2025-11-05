@@ -92,6 +92,29 @@ class DeviceOptionsViewModel @Inject constructor(
     }
 
     @RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN])
+    fun adoptDevice(device: BluetoothDevice, context: Context, payload: JSONObject) {
+        viewModelScope.launch {
+            try {
+                writeAdoptionData(
+                    context,
+                    device,
+                    BleConstants.BLE_SERVICE_UUID,
+                    BleConstants.BLE_ADOPTION_UUID,
+                    BleConstants.BLE_RESPONSE_ADOPTION_UUID,
+                    payload
+                )
+
+                _navigationEvent.emit(DeviceNavigationEvent.NavigateToOptions)
+
+            } catch (e: Exception) {
+                _uiState.value = DeviceOptionsUiState.Error(e.message ?: "BLE adoption failed")
+                Log.e("DeviceOptionsViewModel", "BLE adoption failed: ${e.message}")
+            }
+        }
+    }
+
+
+    @RequiresPermission(allOf = [Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_SCAN])
     private suspend fun readDeviceInfo(
         context: Context,
         device: BluetoothDevice?,
@@ -243,6 +266,92 @@ class DeviceOptionsViewModel @Inject constructor(
             }
         }
     }
+
+    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private suspend fun writeAdoptionData(
+        context: Context,
+        device: BluetoothDevice?,
+        serviceUuid: UUID,
+        writeUuid: UUID,
+        notifyUuid: UUID,
+        jsonPayload: JSONObject,
+        timeoutMillis: Long = 25000L
+    ) = withContext(Dispatchers.IO) {
+        withTimeout(timeoutMillis) {
+            suspendCancellableCoroutine { cont ->
+                var gatt: BluetoothGatt? = null
+                val mainHandler = Handler(Looper.getMainLooper())
+                var operationCompleted = false
+                val buffer = StringBuilder()
+
+                fun finish(error: Exception? = null) {
+                    if (!operationCompleted) {
+                        operationCompleted = true
+                        gatt?.disconnect()
+                        mainHandler.postDelayed({ gatt?.close() }, 300)
+                        if (error != null) cont.resumeWithException(error)
+                        else cont.resume(Unit)
+                    }
+                }
+
+                val callback = object : BluetoothGattCallback() {
+                    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                    override fun onConnectionStateChange(gattLocal: BluetoothGatt, status: Int, newState: Int) {
+                        if (newState == BluetoothProfile.STATE_CONNECTED) {
+                            gattLocal.discoverServices()
+                        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                            finish(Exception("Device disconnected"))
+                        }
+                    }
+
+                    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+                    @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                    override fun onServicesDiscovered(gattLocal: BluetoothGatt, status: Int) {
+                        val service = gattLocal.getService(serviceUuid)
+                        val writeChar = service?.getCharacteristic(writeUuid)
+                        val notifyChar = service?.getCharacteristic(notifyUuid)
+
+                        if (writeChar == null || notifyChar == null) {
+                            finish(Exception("BLE adoption characteristics not found"))
+                            return
+                        }
+
+                        gattLocal.setCharacteristicNotification(notifyChar, true)
+                        val descriptor = notifyChar.getDescriptor(BleConstants.BLE_CLIENT_UUID)
+                        descriptor?.let {
+                            gattLocal.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                        }
+
+                        mainHandler.postDelayed({
+                            val data = jsonPayload.toString().encodeToByteArray()
+                            val status = gattLocal.writeCharacteristic(writeChar, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+
+                            if (status != BluetoothGatt.GATT_SUCCESS) {
+                                finish(Exception("Write failed: $status"))
+                            }
+                        }, 300)
+                    }
+
+                    override fun onCharacteristicChanged(
+                        gattLocal: BluetoothGatt,
+                        characteristic: BluetoothGattCharacteristic,
+                        value: ByteArray
+                    ) {
+                        val msg = value.decodeToString()
+                        buffer.append(msg)
+
+                        if (buffer.isNotEmpty()) {
+                            finish()
+                        }
+                    }
+                }
+
+                gatt = device?.connectGatt(context, false, callback, BluetoothDevice.TRANSPORT_LE)
+                cont.invokeOnCancellation { finish() }
+            }
+        }
+    }
+
 }
 
 sealed class DeviceNavigationEvent {

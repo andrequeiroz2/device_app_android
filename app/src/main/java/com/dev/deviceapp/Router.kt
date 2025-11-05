@@ -17,6 +17,7 @@ import com.dev.deviceapp.view.broker.BrokerDetailScreen
 import com.dev.deviceapp.view.broker.BrokerGetFilterScreen
 import com.dev.deviceapp.view.broker.BrokerTreeScreen
 import com.dev.deviceapp.view.broker.BrokerUpdateScreen
+import com.dev.deviceapp.view.device.DeviceDetailsScreen
 import com.dev.deviceapp.view.device.DeviceOptionsScreen
 import com.dev.deviceapp.view.device.DeviceTreeScreen
 import com.dev.deviceapp.view.device.DeviveBleScanListScreen
@@ -49,7 +50,8 @@ object AppDestinations {
     const val DEVICE_BLE_SCAN_LIST_SCREEN = "deviceBleScanListScreen"
     const val DEVICE_OPTION_TREE_SCREEN = "deviceCharacteristicReadInfoScreen"
 
-    const val DEVICE_ADOPTION_SCREEN = "deviceAdoptionScreen"
+    const val DEVICE_DETAILS_SCREEN = "device/adopt/details"
+
 }
 
 
@@ -158,13 +160,15 @@ fun AppNavigation() {
             )
         }
 
-//        composable(
-//            route = "${AppDestinations.DEVICE_ADOPTION_SCREEN}/{deviceAddress}"
-//        )  { backStackEntry ->
-//
-//            DeviceOptionsScreen(
-//                navController = navController,
-//            )
-//        }
+        composable(
+            route = "${AppDestinations.DEVICE_DETAILS_SCREEN}/{mac}",
+            arguments = listOf(navArgument("mac") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val mac = backStackEntry.arguments?.getString("mac")
+            DeviceDetailsScreen(
+                navController = navController,
+                mac = mac
+            )
+        }
     }
 }

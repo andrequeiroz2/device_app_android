@@ -116,7 +116,9 @@ fun DeviceOptionsScreen(
 
 
                     Button(
-                        onClick = { /* TODO action */ },
+                        onClick = {
+                            navController.navigate("device/adopt/details/${deviceMac}")
+                        },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF00A86B),

@@ -17,6 +17,7 @@ import com.dev.deviceapp.view.broker.BrokerDetailScreen
 import com.dev.deviceapp.view.broker.BrokerGetFilterScreen
 import com.dev.deviceapp.view.broker.BrokerTreeScreen
 import com.dev.deviceapp.view.broker.BrokerUpdateScreen
+import com.dev.deviceapp.view.device.DeviceCreateScreen
 import com.dev.deviceapp.view.device.DeviceDetailsScreen
 import com.dev.deviceapp.view.device.DeviceOptionsScreen
 import com.dev.deviceapp.view.device.DeviceTreeScreen
@@ -51,6 +52,8 @@ object AppDestinations {
     const val DEVICE_OPTION_TREE_SCREEN = "deviceCharacteristicReadInfoScreen"
 
     const val DEVICE_DETAILS_SCREEN = "device/adopt/details"
+
+    const val DEVICE_CREATE_SCREEN = "device/adopt/create"
 
 }
 
@@ -90,6 +93,8 @@ fun AppNavigation() {
             launchSingleTop = true
         }
     }
+
+
 
     NavHost(
         navController = navController,
@@ -166,6 +171,17 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val mac = backStackEntry.arguments?.getString("mac")
             DeviceDetailsScreen(
+                navController = navController,
+                mac = mac
+            )
+        }
+
+        composable(
+            route = "${AppDestinations.DEVICE_CREATE_SCREEN}/{mac}",
+            arguments = listOf(navArgument("mac") { type = NavType.StringType })
+        ){ backStackEntry ->
+            val mac = backStackEntry.arguments?.getString("mac")
+            DeviceCreateScreen(
                 navController = navController,
                 mac = mac
             )

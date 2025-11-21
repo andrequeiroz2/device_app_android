@@ -15,9 +15,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dev.deviceapp.model.device.DeviceBleInfoModel
 import com.dev.deviceapp.viewmodel.device.DeviceOptionsUiState
 import com.dev.deviceapp.viewmodel.device.DeviceOptionsViewModel
+import com.dev.deviceapp.ui.theme.components.DeviceInfoReadOnly
 
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_CONNECT])
@@ -89,25 +89,6 @@ fun DeviceDetailsScreen(
 
                 is DeviceOptionsUiState.AdoptAvailable -> {
                     DeviceInfoReadOnly(info = s.device)
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Button(
-                        onClick = {
-                            // future: vm.adoptDevice()
-                            navController.popBackStack()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00A86B),
-                            contentColor = Color.White
-                        ),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text("Confirm Adoption")
-                    }
                 }
 
                 is DeviceOptionsUiState.Unauthorized -> {
@@ -164,56 +145,56 @@ fun DeviceDetailsScreen(
     }
 }
 
-@Composable
-fun DeviceInfoReadOnly(info: DeviceBleInfoModel) {
-    DetailRow("Device UUID", info.device_uuid)
-    DividerSpace()
-    DetailRow("Device Name", info.device_name)
-    DividerSpace()
-    DetailRow("MAC Address", info.mac_address)
-    DividerSpace()
-    DetailRow("Board Type", info.boarder_type)
-    DividerSpace()
-    DetailRow("Device Type", info.device_type)
-    DividerSpace()
-    DetailRow("Sensor Type", info.sensor_type)
-    DividerSpace()
-    DetailRow("Actuator Type", info.actuator_type)
-    DividerSpace()
-    DetailRow("Broker URL", info.broker_url)
-    DividerSpace()
-    DetailRow("MQTT Topic", info.topic)
-    DividerSpace()
-    val scaleText = info.device_scale.joinToString("\n") { row ->
-        row.joinToString(" = ")
-    }
-    DetailRow("Device Scale", scaleText)
-    DividerSpace()
-    DetailRow(
-        "Adoption Status",
-        if (info.adopted_status == 0) "Unadopted" else "Adopted",
-    )
-    DividerSpace()
-    DetailRow("User UUID", info.user_uuid)
-}
-
-@Composable
-fun DetailRow(label: String, value: String, valueColor: Color = Color.White) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = Color(0xFF00A86B)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = valueColor
-        )
-    }
-}
-
-@Composable
-fun DividerSpace() {
-    Spacer(Modifier.height(16.dp))
-}
+//@Composable
+//fun DeviceInfoReadOnly(info: DeviceBleInfoModel) {
+//    DetailRow("Device UUID", info.device_uuid)
+//    DividerSpace()
+//    DetailRow("Device Name", info.device_name)
+//    DividerSpace()
+//    DetailRow("MAC Address", info.mac_address)
+//    DividerSpace()
+//    DetailRow("Board Type", info.boarder_type)
+//    DividerSpace()
+//    DetailRow("Device Type", info.device_type)
+//    DividerSpace()
+//    DetailRow("Sensor Type", info.sensor_type)
+//    DividerSpace()
+//    DetailRow("Actuator Type", info.actuator_type)
+//    DividerSpace()
+//    DetailRow("Broker URL", info.broker_url)
+//    DividerSpace()
+//    DetailRow("MQTT Topic", info.topic)
+//    DividerSpace()
+//    val scaleText = info.device_scale.joinToString("\n") { row ->
+//        row.joinToString(" = ")
+//    }
+//    DetailRow("Device Scale", scaleText)
+//    DividerSpace()
+//    DetailRow(
+//        "Adoption Status",
+//        if (info.adopted_status == 0) "Unadopted" else "Adopted",
+//    )
+//    DividerSpace()
+//    DetailRow("User UUID", info.user_uuid)
+//}
+//
+//@Composable
+//fun DetailRow(label: String, value: String, valueColor: Color = Color.White) {
+//    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+//        Text(
+//            text = label,
+//            style = MaterialTheme.typography.labelMedium,
+//            color = Color(0xFF00A86B)
+//        )
+//        Text(
+//            text = value,
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = valueColor
+//        )
+//    }
+//}
+//
+//@Composable
+//fun DividerSpace() {
+//    Spacer(Modifier.height(16.dp))
+//}

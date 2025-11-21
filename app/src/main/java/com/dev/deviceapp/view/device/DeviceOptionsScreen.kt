@@ -109,7 +109,7 @@ fun DeviceOptionsScreen(
 
                     Button(
                         onClick = {
-                            navController.navigate("device/adopt/details/${deviceMac}")
+                            navController.navigate("device/adopt/create/${deviceMac}")
                         },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(

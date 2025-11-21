@@ -1,9 +1,9 @@
-package com.dev.deviceapp.repository.broker
+package com.dev.deviceapp.repository.device
 
 import android.content.Context
 import com.dev.deviceapp.config.ApiRoutes
-import com.dev.deviceapp.model.broker.BrokerCreateRequest
-import com.dev.deviceapp.model.broker.BrokerResponse
+import com.dev.deviceapp.model.device.DeviceAdoptionResponse
+import com.dev.deviceapp.model.device.DeviceCreateRequest
 import com.dev.deviceapp.repository.login.TokenRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
@@ -13,11 +13,11 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import jakarta.inject.Inject
 import jakarta.inject.Named
+import javax.inject.Inject
 import kotlin.time.ExperimentalTime
 
-class BrokerCreateRepository @Inject constructor(
+class DeviceCreateRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient,
     @ApplicationContext private val context: Context,
     private val tokenRepository: TokenRepository
@@ -26,39 +26,39 @@ class BrokerCreateRepository @Inject constructor(
     private val apiRoutes = ApiRoutes(context)
 
     @OptIn(ExperimentalTime::class)
-    suspend fun createBroker(broker: BrokerCreateRequest): BrokerResponse {
+    suspend fun createDevice(device: DeviceCreateRequest): DeviceAdoptionResponse {
         tokenRepository.getTokenInfoRepository() ?:
         throw IllegalStateException("User not Authenticate")
 
-        val url = apiRoutes.getUrl("broker_post")
+        val url = apiRoutes.getUrl("device_post")
 
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
-            setBody(broker)
+            setBody(device)
         }
 
         return if(response.status == HttpStatusCode.OK){
-            val data = response.body<BrokerResponse.Success>()
-            BrokerResponse.Success(
+            val data = response.body<DeviceAdoptionResponse.Success>()
+            DeviceAdoptionResponse.Success(
                 data.uuid,
-                data.host,
-                data.port,
-                data.clientId,
-                data.version,
-                data.versionText,
-                data.keepAlive,
-                data.cleanSession,
-                data.lastWillTopic,
-                data.lastWillMessage,
-                data.lastWillQos,
-                data.lastWillRetain,
-                data.connected,
+                data.userUuid,
+                data.name,
+                data.deviceTypeInt,
+                data.deviceTypeText,
+                data.borderTypeInt,
+                data.borderTypeText,
+                data.macAddress,
+                data.deviceConditionInt,
+                data.deviceConditionText,
                 data.createdAt,
                 data.updatedAt,
+                data.deletedAt,
+                data.message,
+                data.scale
             )
         }else{
-            val data = response.body<BrokerResponse.Error>()
-            BrokerResponse.Error(
+            val data = response.body<DeviceAdoptionResponse.Error>()
+            DeviceAdoptionResponse.Error(
                 data.errorMessage
             )
         }

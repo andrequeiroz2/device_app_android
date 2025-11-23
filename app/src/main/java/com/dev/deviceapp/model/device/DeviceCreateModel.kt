@@ -8,14 +8,14 @@ import kotlin.time.Instant
 
 @Serializable
 data class DeviceCreateRequest(
-    val board_type: String,
-    val mac_address: String,
-    val device_type: String,
+    val name: String,
+    val device_type_str: String,
+    val board_type_str: String,
     val sensor_type: String? = null,
     val actuator_type: String? = null,
-    val adopted_status: Int,
-    val device_scale: List<Pair<String, String>>? = null,
-    val device_name: String,
+    val adopted_status: String,
+    val mac_address: String,
+    val scale: List<List<String>>? = null,
     val message: DeviceMessageCreateRequest
 )
 
@@ -93,10 +93,10 @@ sealed class DeviceAdoptionResponse {
         val deviceTypeInt: Int,
         @SerialName("device_type_text")
         val deviceTypeText: String,
-        @SerialName("border_type_int")
-        val borderTypeInt: Int,
-        @SerialName("border_type_text")
-        val borderTypeText: String,
+        @SerialName("board_type_int")
+        val boardTypeInt: Int,
+        @SerialName("board_type_text")
+        val boardTypeText: String,
         @SerialName("mac_address")
         val macAddress: String,
         @SerialName("device_condition_int")

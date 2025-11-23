@@ -1,6 +1,7 @@
 package com.dev.deviceapp.repository.device
 
 import android.content.Context
+import android.util.Log
 import com.dev.deviceapp.config.ApiRoutes
 import com.dev.deviceapp.model.device.DeviceAdoptionResponse
 import com.dev.deviceapp.model.device.DeviceCreateRequest
@@ -37,7 +38,7 @@ class DeviceCreateRepository @Inject constructor(
             setBody(device)
         }
 
-        return if(response.status == HttpStatusCode.OK){
+        return if (response.status == HttpStatusCode.OK) {
             val data = response.body<DeviceAdoptionResponse.Success>()
             DeviceAdoptionResponse.Success(
                 data.uuid,
@@ -45,8 +46,8 @@ class DeviceCreateRepository @Inject constructor(
                 data.name,
                 data.deviceTypeInt,
                 data.deviceTypeText,
-                data.borderTypeInt,
-                data.borderTypeText,
+                data.boardTypeInt,
+                data.boardTypeText,
                 data.macAddress,
                 data.deviceConditionInt,
                 data.deviceConditionText,
@@ -56,10 +57,16 @@ class DeviceCreateRepository @Inject constructor(
                 data.message,
                 data.scale
             )
-        }else{
-            val data = response.body<DeviceAdoptionResponse.Error>()
+        } else {
+            val errorText = try {
+                response.body<String>()
+            } catch (e: Exception) {
+                Log.e("DeviceCreateRepository", "Error reading error body", e)
+                "Unknown error"
+            }
+
             DeviceAdoptionResponse.Error(
-                data.errorMessage
+                errorMessage = errorText
             )
         }
     }

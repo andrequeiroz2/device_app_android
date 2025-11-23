@@ -3,7 +3,9 @@ package com.dev.deviceapp.view.device
 import android.bluetooth.BluetoothManager
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,19 +22,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TextField
-import androidx.compose.material3.menuAnchor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,9 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.DropdownMenuItem
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.model.device.DeviceBleInfoModel
 import com.dev.deviceapp.model.device.DeviceCreateRequest
 import com.dev.deviceapp.model.device.DeviceMessageCreateRequest
@@ -68,43 +63,35 @@ fun DeviceCreateScreen(
     navController: NavController,
     mac: String?,
     optionsViewModel: DeviceOptionsViewModel = hiltViewModel(),
-    deviceCreateViewModel: DeviceCreateViewModel = hiltViewModel()
+    deviceCreateViewModel: DeviceCreateViewModel = hiltViewModel(),
+    onLogout: () -> Unit = {}
 ) {
+    val tokenInfo = remember { deviceCreateViewModel.getTokenInfo() }
+    if (tokenInfo == null) {
+        Log.e("ProfileScreen", "Unauthorized")
+        LaunchedEffect(Unit) { onLogout() }
+        return
+    }
+
     val context = LocalContext.current
 
     var deviceName by remember { mutableStateOf("") }
-    var brokerUrl by remember { mutableStateOf("") }
-    var mqttTopic by remember { mutableStateOf("") }
     var qos by remember { mutableStateOf("1") }
     var retained by remember { mutableStateOf("true") }
     var publisher by remember { mutableStateOf("true") }
     var subscriber by remember { mutableStateOf("true") }
     var commandStart by remember { mutableStateOf("1") }
-    var commandEnd by remember { mutableStateOf("1") }
+    var commandEnd by remember { mutableStateOf("0") }
     var bleValidationPassed by remember { mutableStateOf(false) }
 
     val createState by deviceCreateViewModel.state.collectAsState()
     val state by optionsViewModel.uiState.collectAsState()
-    val tokenInfo = remember { deviceCreateViewModel.getTokenInfo() }
-    val userUuid = tokenInfo?.uuid.orEmpty()
 
     val isAdoptEnabled = deviceName.isNotBlank() &&
-            brokerUrl.isNotBlank() &&
-            mqttTopic.isNotBlank() &&
             commandStart.isNotBlank() &&
             commandEnd.isNotBlank() &&
-            userUuid.isNotBlank() &&
+            tokenInfo.uuid.isNotBlank() &&
             bleValidationPassed
-
-    LaunchedEffect(tokenInfo) {
-        if (tokenInfo == null) {
-            Toast.makeText(context, "Session expired. Please log in again.", Toast.LENGTH_LONG).show()
-            navController.navigate(AppDestinations.LOGIN_SCREEN) {
-                popUpTo(0) { inclusive = true }
-                launchSingleTop = true
-            }
-        }
-    }
 
     LaunchedEffect(createState) {
         when (createState) {
@@ -117,6 +104,7 @@ fun DeviceCreateScreen(
             }
 
             is DeviceCreateUiState.Error -> {
+                Log.e("DeviceCreateScreen", (createState as DeviceCreateUiState.Error).message)
                 Toast.makeText(
                     context,
                     (createState as DeviceCreateUiState.Error).message,
@@ -207,24 +195,14 @@ fun DeviceCreateScreen(
                         if (deviceName.isBlank() && info.device_name.isNotBlank()) {
                             deviceName = info.device_name
                         }
-                        if (brokerUrl.isBlank() && info.broker_url.isNotBlank()) {
-                            brokerUrl = info.broker_url
-                        }
-                        if (mqttTopic.isBlank() && info.topic.isNotBlank()) {
-                            mqttTopic = info.topic
-                        }
                     }
 
                     if (bleValidationPassed) {
                         DeviceAdoptionForm(
                             info = info,
-                            userUuid = userUuid,
+                            userUuid = tokenInfo.uuid,
                             deviceName = deviceName,
                             onDeviceNameChange = { deviceName = it },
-                            brokerUrl = brokerUrl,
-                            onBrokerUrlChange = { brokerUrl = it },
-                            mqttTopic = mqttTopic,
-                            onMqttTopicChange = { mqttTopic = it },
                             qos = qos,
                             onQosChange = { qos = it },
                             retained = retained,
@@ -253,25 +231,37 @@ fun DeviceCreateScreen(
                             onClick = {
                                 val sensorType = info.sensor_type.takeIf { it.isNotBlank() }
                                 val actuatorType = info.actuator_type.takeIf { it.isNotBlank() }
-                                val scalePairs = info.toScalePairs()
+
+                                val device_scale_list: List<List<String>> =
+                                    info.device_scale.map { item ->
+                                        listOf(item[0], item[1])
+                                    }
+
+                                Log.d(
+                                    "DeviceCreateScreen",
+                                    "Sending payload: ble_info=${info}, " +
+                                            "sensor=$sensorType, " +
+                                            "actuator=$actuatorType, " +
+                                            "name=$deviceName"
+                                )
 
                                 deviceCreateViewModel.createDevice(
                                     DeviceCreateRequest(
-                                        board_type = info.boarder_type,
-                                        mac_address = info.mac_address,
-                                        device_type = info.device_type,
+                                        name = deviceName,
+                                        device_type_str = info.device_type,
+                                        board_type_str = info.boarder_type,
                                         sensor_type = sensorType,
                                         actuator_type = actuatorType,
-                                        adopted_status = info.adopted_status,
-                                        device_scale = scalePairs,
-                                        device_name = deviceName,
+                                        adopted_status = "adopted",
+                                        mac_address = info.mac_address,
+                                        scale = device_scale_list,
                                         message = DeviceMessageCreateRequest(
                                             qos = qos.toIntOrNull() ?: 1,
                                             retained = retained.equals("true", ignoreCase = true),
                                             publisher = publisher.equals("true", ignoreCase = true),
                                             subscriber = subscriber.equals("true", ignoreCase = true),
                                             command_start = commandStart.toIntOrNull() ?: 1,
-                                            command_end = commandEnd.toIntOrNull() ?: 1
+                                            command_end = commandEnd.toIntOrNull() ?: 0
                                         )
                                     )
                                 )
@@ -354,10 +344,6 @@ fun DeviceAdoptionForm(
     userUuid: String,
     deviceName: String,
     onDeviceNameChange: (String) -> Unit,
-    brokerUrl: String,
-    onBrokerUrlChange: (String) -> Unit,
-    mqttTopic: String,
-    onMqttTopicChange: (String) -> Unit,
     qos: String,
     onQosChange: (String) -> Unit,
     retained: String,
@@ -409,14 +395,6 @@ fun DeviceAdoptionForm(
     )
     DividerSpace()
 
-    EditableDetailRow(
-        label = "Broker URL",
-        value = brokerUrl,
-        onValueChange = onBrokerUrlChange,
-        placeholder = "Enter broker URL"
-    )
-    DividerSpace()
-
     DropdownSelector(
         label = "QoS",
         options = listOf("0", "1", "2", "3"),
@@ -464,19 +442,6 @@ fun DeviceAdoptionForm(
         placeholder = "1"
     )
     DividerSpace()
-
-    EditableDetailRow(
-        label = "MQTT Topic",
-        value = mqttTopic,
-        onValueChange = onMqttTopicChange,
-        placeholder = "Enter MQTT topic"
-    )
-    DividerSpace()
-}
-
-@Composable
-fun DividerSpace() {
-    Spacer(Modifier.height(16.dp))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -495,39 +460,33 @@ private fun DropdownSelector(
             style = MaterialTheme.typography.labelMedium,
             color = Color(0xFF00A86B)
         )
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = true }
         ) {
-            TextField(
+            androidx.compose.material3.OutlinedTextField(
                 value = selectedOption,
                 onValueChange = {},
                 readOnly = true,
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = Color(0xFF00A86B),
-                    unfocusedIndicatorColor = Color(0xFF666666),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedLabelColor = Color(0xFF00A86B),
-                    cursorColor = Color(0xFF00A86B),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                enabled = false,
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = Color.White,
+                    disabledBorderColor = Color(0xFF666666),
+                    disabledContainerColor = Color.Transparent
                 ),
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
+                modifier = Modifier.fillMaxWidth()
             )
 
-            ExposedDropdownMenu(
+            androidx.compose.material3.DropdownMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false }
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.fillMaxWidth()
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option) },
+                        text = { Text(option, color = Color.White) },
                         onClick = {
                             onOptionSelected(option)
                             expanded = false
@@ -553,39 +512,26 @@ private fun validateBleData(info: DeviceBleInfoModel): BleValidationError? {
 
     if (missingFields.isNotEmpty()) {
         return BleValidationError(
-            logMessage = "Inconsistente device data. Missing required fields: ${missingFields.joinToString()}",
-            toastMessage = "Inconsistente device data"
+            logMessage = "Inconsistent device data. Missing required fields: ${missingFields.joinToString()}",
+            toastMessage = "Inconsistent device data"
         )
     }
 
     if (info.adopted_status != 0) {
         return BleValidationError(
-            logMessage = "Inconsistente device e o valor recebido em `Adopted Status`: ${info.adopted_status}",
-            toastMessage = "Inconsistente device data"
+            logMessage = "Inconsistent device, `Adopted Status`: ${info.adopted_status}",
+            toastMessage = "Inconsistent device data"
         )
     }
 
     if (info.sensor_type.isBlank() && info.actuator_type.isBlank()) {
         return BleValidationError(
-            logMessage = "Inconsistente device data sensor_type and actuator_type are null",
-            toastMessage = "Inconsistente device data"
+            logMessage = "Device data is inconsistent when sensor_type and actuator_type are null.",
+            toastMessage = "Inconsistent device data"
         )
     }
 
     return null
-}
-
-private fun DeviceBleInfoModel.toScalePairs(): List<Pair<String, String>>? {
-    val pairs = device_scale.mapNotNull { row ->
-        val metric = row.getOrNull(0)?.takeIf { it.isNotBlank() }
-        val unit = row.getOrNull(1)?.takeIf { it.isNotBlank() }
-        if (metric != null && unit != null) {
-            metric to unit
-        } else {
-            null
-        }
-    }
-    return pairs.takeIf { it.isNotEmpty() }
 }
 
 private fun formatBleValue(value: String?): String =

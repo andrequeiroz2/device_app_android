@@ -3,6 +3,7 @@ package com.dev.deviceapp.view.device
 import android.bluetooth.BluetoothManager
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -129,210 +130,222 @@ fun DeviceCreateScreen(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFF121212)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .statusBarsPadding()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Start
+        Box(modifier = Modifier.fillMaxSize()) {
+
+            // ------------------- TELA NORMAL -------------------
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .navigationBarsPadding()
+                    .statusBarsPadding()
             ) {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
+                    }
+                    Text(
+                        text = "Device Adoption",
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color(0xFF00A86B)
                     )
                 }
-                Text(
-                    text = "Device Adoption",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = Color(0xFF00A86B)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-            when (val s = state) {
-                DeviceOptionsUiState.Loading -> {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color(0xFF00A86B),
-                            strokeWidth = 4.dp
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Text(
-                            "Reading device info...",
-                            color = Color.White,
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
-                }
-
-                is DeviceOptionsUiState.AdoptAvailable -> {
-                    val info = s.device
-
-                    LaunchedEffect(info.mac_address, info.device_uuid, info.adopted_status) {
-                        val validationError = validateBleData(info)
-                        if (validationError != null) {
-                            bleValidationPassed = false
-                            Log.e("DeviceCreateScreen", validationError.logMessage)
-                            Toast.makeText(context, validationError.toastMessage, Toast.LENGTH_LONG)
-                                .show()
-                            navController.popBackStack()
-                            return@LaunchedEffect
-                        }
-
-                        bleValidationPassed = true
-                        if (deviceName.isBlank() && info.device_name.isNotBlank()) {
-                            deviceName = info.device_name
-                        }
-                    }
-
-                    if (bleValidationPassed) {
-                        DeviceAdoptionForm(
-                            info = info,
-                            userUuid = tokenInfo.uuid,
-                            deviceName = deviceName,
-                            onDeviceNameChange = { deviceName = it },
-                            qos = qos,
-                            onQosChange = { qos = it },
-                            retained = retained,
-                            onRetainedChange = { retained = it },
-                            publisher = publisher,
-                            onPublisherChange = { publisher = it },
-                            subscriber = subscriber,
-                            onSubscriberChange = { subscriber = it },
-                            commandStart = commandStart,
-                            onCommandStartChange = { value ->
-                                if (value.all { it.isDigit() } || value.isBlank()) {
-                                    commandStart = value
-                                }
-                            },
-                            commandEnd = commandEnd,
-                            onCommandEndChange = { value ->
-                                if (value.all { it.isDigit() } || value.isBlank()) {
-                                    commandEnd = value
-                                }
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        Button(
-                            onClick = {
-                                val sensorType = info.sensor_type.takeIf { it.isNotBlank() }
-                                val actuatorType = info.actuator_type.takeIf { it.isNotBlank() }
-
-                                val device_scale_list: List<List<String>> =
-                                    info.device_scale.map { item ->
-                                        listOf(item[0], item[1])
-                                    }
-
-                                Log.d(
-                                    "DeviceCreateScreen",
-                                    "Sending payload: ble_info=${info}, " +
-                                            "sensor=$sensorType, " +
-                                            "actuator=$actuatorType, " +
-                                            "name=$deviceName"
-                                )
-
-                                deviceCreateViewModel.createDevice(
-                                    DeviceCreateRequest(
-                                        name = deviceName,
-                                        device_type_str = info.device_type,
-                                        board_type_str = info.boarder_type,
-                                        sensor_type = sensorType,
-                                        actuator_type = actuatorType,
-                                        adopted_status = "adopted",
-                                        mac_address = info.mac_address,
-                                        scale = device_scale_list,
-                                        message = DeviceMessageCreateRequest(
-                                            qos = qos.toIntOrNull() ?: 1,
-                                            retained = retained.equals("true", ignoreCase = true),
-                                            publisher = publisher.equals("true", ignoreCase = true),
-                                            subscriber = subscriber.equals("true", ignoreCase = true),
-                                            command_start = commandStart.toIntOrNull() ?: 1,
-                                            command_end = commandEnd.toIntOrNull() ?: 0
-                                        )
-                                    )
-                                )
-                            },
-                            enabled = isAdoptEnabled && createState !is DeviceCreateUiState.Loading,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF00A86B),
-                                contentColor = Color.White,
-                                disabledContainerColor = Color(0xFF666666),
-                                disabledContentColor = Color(0xFF999999)
-                            ),
-                            shape = MaterialTheme.shapes.medium
+                when (val s = state) {
+                    DeviceOptionsUiState.Loading -> {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Adopt")
-                        }
-
-                        if (createState is DeviceCreateUiState.Loading) {
-                            Spacer(modifier = Modifier.height(16.dp))
                             CircularProgressIndicator(
                                 color = Color(0xFF00A86B),
                                 strokeWidth = 4.dp
                             )
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                "Reading device info...",
+                                color = Color.White,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
+                    }
+
+                    is DeviceOptionsUiState.AdoptAvailable -> {
+                        val info = s.device
+
+                        LaunchedEffect(info.mac_address, info.device_uuid, info.adopted_status) {
+                            val validationError = validateBleData(info)
+                            if (validationError != null) {
+                                bleValidationPassed = false
+                                Log.e("DeviceCreateScreen", validationError.logMessage)
+                                Toast.makeText(context, validationError.toastMessage, Toast.LENGTH_LONG)
+                                    .show()
+                                navController.popBackStack()
+                                return@LaunchedEffect
+                            }
+
+                            bleValidationPassed = true
+                            if (deviceName.isBlank() && info.device_name.isNotBlank()) {
+                                deviceName = info.device_name
+                            }
+                        }
+
+                        if (bleValidationPassed) {
+                            DeviceAdoptionForm(
+                                info = info,
+                                userUuid = tokenInfo.uuid,
+                                deviceName = deviceName,
+                                onDeviceNameChange = { deviceName = it },
+                                qos = qos,
+                                onQosChange = { qos = it },
+                                retained = retained,
+                                onRetainedChange = { retained = it },
+                                publisher = publisher,
+                                onPublisherChange = { publisher = it },
+                                subscriber = subscriber,
+                                onSubscriberChange = { subscriber = it },
+                                commandStart = commandStart,
+                                onCommandStartChange = { value ->
+                                    if (value.all { it.isDigit() } || value.isBlank()) {
+                                        commandStart = value
+                                    }
+                                },
+                                commandEnd = commandEnd,
+                                onCommandEndChange = { value ->
+                                    if (value.all { it.isDigit() } || value.isBlank()) {
+                                        commandEnd = value
+                                    }
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(32.dp))
+
+                            Button(
+                                onClick = {
+                                    val sensorType = info.sensor_type.takeIf { it.isNotBlank() }
+                                    val actuatorType = info.actuator_type.takeIf { it.isNotBlank() }
+
+                                    val device_scale_list: List<List<String>> =
+                                        info.device_scale.map { item ->
+                                            listOf(item[0], item[1])
+                                        }
+
+                                    deviceCreateViewModel.createDevice(
+                                        DeviceCreateRequest(
+                                            name = deviceName,
+                                            device_type_str = info.device_type,
+                                            board_type_str = info.boarder_type,
+                                            sensor_type = sensorType,
+                                            actuator_type = actuatorType,
+                                            adopted_status = "adopted",
+                                            mac_address = info.mac_address,
+                                            scale = device_scale_list,
+                                            message = DeviceMessageCreateRequest(
+                                                qos = qos.toIntOrNull() ?: 1,
+                                                retained = retained.equals("true", ignoreCase = true),
+                                                publisher = publisher.equals("true", ignoreCase = true),
+                                                subscriber = subscriber.equals("true", ignoreCase = true),
+                                                command_start = commandStart.toIntOrNull() ?: 1,
+                                                command_end = commandEnd.toIntOrNull() ?: 0
+                                            )
+                                        )
+                                    )
+                                },
+                                enabled = isAdoptEnabled && createState !is DeviceCreateUiState.Loading,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF00A86B),
+                                    contentColor = Color.White,
+                                    disabledContainerColor = Color(0xFF666666),
+                                    disabledContentColor = Color(0xFF999999)
+                                ),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Text("Adopt")
+                            }
+                        }
+                    }
+
+                    is DeviceOptionsUiState.Unauthorized -> {
+                        Text(
+                            text = "Device already adopted by another user",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Red
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+
+                    is DeviceOptionsUiState.Owner -> {
+                        Text(
+                            text = "This device already belongs to you",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color(0xFF00A86B)
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+
+                    is DeviceOptionsUiState.Error -> {
+                        Text(
+                            text = "Error reading device info",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.Red
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
                 }
 
-                is DeviceOptionsUiState.Unauthorized -> {
-                    Text(
-                        text = "Device already adopted by another user",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.Red
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
+                Spacer(modifier = Modifier.height(24.dp))
 
-                is DeviceOptionsUiState.Owner -> {
-                    Text(
-                        text = "This device already belongs to you",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color(0xFF00A86B)
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
-                }
-
-                is DeviceOptionsUiState.Error -> {
-                    Text(
-                        text = "Error reading device info",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.Red
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
+                Button(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF00A86B),
+                        contentColor = Color.White
+                    ),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Back")
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // ------------------- OVERLAY DE LOADING -------------------
+            if (createState is DeviceCreateUiState.Loading) {
 
-            Button(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF00A86B),
-                    contentColor = Color.White
-                ),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text("Back")
+                // fundo escuro bloqueando toque
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.6f))
+                        .clickable(enabled = true) { }
+                )
+
+                // spinner no centro
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = Color(0xFF00A86B),
+                        strokeWidth = 5.dp
+                    )
+                }
             }
         }
     }
@@ -536,3 +549,4 @@ private fun validateBleData(info: DeviceBleInfoModel): BleValidationError? {
 
 private fun formatBleValue(value: String?): String =
     value?.takeIf { it.isNotBlank() } ?: "---"
+

@@ -54,6 +54,7 @@ import com.dev.deviceapp.viewmodel.device.DeviceCreateUiState
 import com.dev.deviceapp.viewmodel.device.DeviceCreateViewModel
 import com.dev.deviceapp.viewmodel.device.DeviceOptionsUiState
 import com.dev.deviceapp.viewmodel.device.DeviceOptionsViewModel
+import com.dev.deviceapp.model.device.DeviceAdoptionBoard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.annotation.RequiresPermission(
@@ -84,6 +85,7 @@ fun DeviceCreateScreen(
     var commandStart by remember { mutableStateOf("1") }
     var commandEnd by remember { mutableStateOf("0") }
     var bleValidationPassed by remember { mutableStateOf(false) }
+    var bluetoothDevice by remember { mutableStateOf<android.bluetooth.BluetoothDevice?>(null) }
 
     val createState by deviceCreateViewModel.state.collectAsState()
     val state by optionsViewModel.uiState.collectAsState()
@@ -95,20 +97,47 @@ fun DeviceCreateScreen(
             bleValidationPassed
 
     LaunchedEffect(createState) {
-        when (createState) {
+        when (val state = createState) {
             is DeviceCreateUiState.Success -> {
+                // Create DeviceAdoptionBoard from response
+                val adoptionBoard = DeviceAdoptionBoard(
+                    device_name = state.device.name,
+                    user_uuid = state.device.userUuid,
+                    device_uuid = state.device.uuid,
+                    broker_url = state.device.brokerUrl,
+                    topic = state.device.message.topic
+                )
+
+                // Send adoption data via BLE
+                bluetoothDevice?.let { device ->
+                    deviceCreateViewModel.sendAdoptionDataToDevice(
+                        context = context,
+                        device = device,
+                        adoptionBoard = adoptionBoard
+                    )
+                } ?: run {
+                    Toast.makeText(
+                        context,
+                        "Bluetooth device not available",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+
+            is DeviceCreateUiState.BleAdoptionSuccess -> {
                 Toast.makeText(
                     context,
-                    "Device adopted successfully.",
+                    "Adoption Success",
                     Toast.LENGTH_LONG
                 ).show()
+                navController.popBackStack()
             }
 
             is DeviceCreateUiState.Error -> {
-                Log.e("DeviceCreateScreen", (createState as DeviceCreateUiState.Error).message)
+                Log.e("DeviceCreateScreen", state.message)
                 Toast.makeText(
                     context,
-                    (createState as DeviceCreateUiState.Error).message,
+                    state.message,
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -122,6 +151,7 @@ fun DeviceCreateScreen(
             val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
             val bt = bluetoothManager?.adapter
             val device = bt?.getRemoteDevice(mac)
+            bluetoothDevice = device
             if (device != null) optionsViewModel.loadDevice(device, context)
         }
     }

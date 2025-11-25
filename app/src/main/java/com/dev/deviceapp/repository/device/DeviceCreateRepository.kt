@@ -55,7 +55,8 @@ class DeviceCreateRepository @Inject constructor(
                 data.updatedAt,
                 data.deletedAt,
                 data.message,
-                data.scale
+                data.scale,
+                data.brokerUrl
             )
         } else {
             val errorText = try {

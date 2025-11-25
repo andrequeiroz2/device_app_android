@@ -113,7 +113,9 @@ sealed class DeviceAdoptionResponse {
         @Serializable(with = InstantSerializer::class)
         val deletedAt: Instant? = null,
         val message: DeviceMessageResponse,
-        val scale: List<DeviceScaleResponse>
+        val scale: List<DeviceScaleResponse>,
+        @SerialName("broker_url")
+        val brokerUrl: String
     ) : DeviceAdoptionResponse()
 
     @Serializable

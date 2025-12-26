@@ -3,6 +3,7 @@ package com.dev.deviceapp.repository.device
 import android.content.Context
 import com.dev.deviceapp.config.ApiRoutes
 import com.dev.deviceapp.database.device.DeviceDao
+import com.dev.deviceapp.database.device.DeviceDaoLogger
 import com.dev.deviceapp.database.device.DeviceEntity
 import com.dev.deviceapp.database.device.DeviceMessageEntity
 import com.dev.deviceapp.database.device.DeviceMessageReceivedEntity
@@ -20,8 +21,10 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import jakarta.inject.Inject
 import jakarta.inject.Named
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.time.ExperimentalTime
 
 class DeviceGetOwnedUserRepository @Inject constructor(
     @Named("HttpClientAuthenticated") private val client: HttpClient,
@@ -62,7 +65,7 @@ class DeviceGetOwnedUserRepository @Inject constructor(
                 data.hasNextPage
             )
             
-            // Salvar no banco local quando for Success
+            // Save DataBase Devices
             withContext(Dispatchers.IO) {
                 saveDevicesToDatabase(data.devices)
             }
@@ -76,6 +79,7 @@ class DeviceGetOwnedUserRepository @Inject constructor(
         })
     }
     
+    @OptIn(ExperimentalTime::class)
     private suspend fun saveDevicesToDatabase(devices: List<DeviceAndMessageResponse>) {
         val deviceEntities = devices.map { device ->
             val messageEntities = device.message?.map { message ->
@@ -111,5 +115,8 @@ class DeviceGetOwnedUserRepository @Inject constructor(
         }
         
         deviceDao.replaceAllDevices(deviceEntities)
+        
+        // Log Database device REPLACE_ALL
+        DeviceDaoLogger.logDatabaseState(deviceDao, "REPLACE_ALL")
     }
 }

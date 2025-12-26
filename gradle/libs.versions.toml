@@ -22,7 +22,7 @@ ui = "1.9.1"
 paging = "3.3.6"
 foundation = "1.9.3"
 runtime = "1.9.3"
-room = "2.6.1"
+room = "2.8.4"
 
 
 

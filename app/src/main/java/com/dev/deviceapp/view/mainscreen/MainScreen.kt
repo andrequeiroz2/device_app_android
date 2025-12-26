@@ -18,11 +18,31 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import android.util.Log
 import com.dev.deviceapp.AppDestinations
+import com.dev.deviceapp.database.device.DeviceDao
+import com.dev.deviceapp.model.device.DeviceGetOwnedUserFilterRequest
+import com.dev.deviceapp.repository.device.DeviceGetOwnedUserRepository
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import com.dev.deviceapp.viewmodel.user.UserGetUiState
 import com.dev.deviceapp.viewmodel.user.UserGetViewModel
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.launch
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface DeviceGetOwnedUserRepositoryEntryPoint {
+    fun deviceGetOwnedUserRepository(): DeviceGetOwnedUserRepository
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface DeviceDaoEntryPoint {
+    fun deviceDao(): DeviceDao
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +60,50 @@ fun MainScreen(
     }
 
     val context = LocalContext.current
+    
+    // Acessar DeviceDao e Repository
+    val deviceDao = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            DeviceDaoEntryPoint::class.java
+        ).deviceDao()
+    }
+    
+    val deviceRepository = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            DeviceGetOwnedUserRepositoryEntryPoint::class.java
+        ).deviceGetOwnedUserRepository()
+    }
+    
+    // Carregar dispositivos apenas se não existirem no banco
+    LaunchedEffect(Unit) {
+        try {
+            // Verificar se já existem dispositivos no banco
+            val existingDevices = deviceDao.getAllDevices()
+            
+            if (existingDevices.isEmpty()) {
+                // Banco vazio, fazer chamada à API
+                Log.i("MainScreen", "No devices in cache, loading from API...")
+                val response = deviceRepository.getDeviceOwnedUser(
+                    DeviceGetOwnedUserFilterRequest()
+                )
+                when (response) {
+                    is com.dev.deviceapp.model.device.DeviceGetOwnedUserResponse.Success -> {
+                        Log.i("MainScreen", "Devices loaded successfully: ${response.devices.size} devices")
+                    }
+                    is com.dev.deviceapp.model.device.DeviceGetOwnedUserResponse.Error -> {
+                        Log.w("MainScreen", "Error loading devices: ${response.errorMessage}")
+                    }
+                }
+            } else {
+                // Já existem dispositivos no banco, não precisa chamar API
+                Log.i("MainScreen", "Devices already in cache (${existingDevices.size} devices), skipping API call")
+            }
+        } catch (e: Exception) {
+            Log.e("MainScreen", "Error checking/loading devices: ${e.message}", e)
+        }
+    }
 
     val uiStateUserGet by userGetViewModel.state.collectAsState()
     LaunchedEffect(uiStateUserGet) {

@@ -11,6 +11,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -61,7 +62,10 @@ fun MainScreen(
 
     val context = LocalContext.current
     
-    // Acessar DeviceDao e Repository
+    // State loading controller spinner
+    var isLoadingDevices by remember { mutableStateOf(false) }
+    
+    // Access DeviceDao and Repository
     val deviceDao = remember {
         EntryPointAccessors.fromApplication(
             context.applicationContext,
@@ -75,19 +79,21 @@ fun MainScreen(
             DeviceGetOwnedUserRepositoryEntryPoint::class.java
         ).deviceGetOwnedUserRepository()
     }
-    
-    // Carregar dispositivos apenas se não existirem no banco
+
     LaunchedEffect(Unit) {
         try {
-            // Verificar se já existem dispositivos no banco
+            // Verify exists devices on DataBase
             val existingDevices = deviceDao.getAllDevices()
             
             if (existingDevices.isEmpty()) {
-                // Banco vazio, fazer chamada à API
+                // get device owned user
                 Log.i("MainScreen", "No devices in cache, loading from API...")
+                isLoadingDevices = true
+                
                 val response = deviceRepository.getDeviceOwnedUser(
                     DeviceGetOwnedUserFilterRequest()
                 )
+                
                 when (response) {
                     is com.dev.deviceapp.model.device.DeviceGetOwnedUserResponse.Success -> {
                         Log.i("MainScreen", "Devices loaded successfully: ${response.devices.size} devices")
@@ -96,12 +102,15 @@ fun MainScreen(
                         Log.w("MainScreen", "Error loading devices: ${response.errorMessage}")
                     }
                 }
+                
+                isLoadingDevices = false
             } else {
-                // Já existem dispositivos no banco, não precisa chamar API
+                // Devices already exist in the database; no need to call the API.
                 Log.i("MainScreen", "Devices already in cache (${existingDevices.size} devices), skipping API call")
             }
         } catch (e: Exception) {
             Log.e("MainScreen", "Error checking/loading devices: ${e.message}", e)
+            isLoadingDevices = false
         }
     }
 
@@ -142,23 +151,39 @@ fun MainScreen(
                 HorizontalDivider(Modifier, DividerDefaults.Thickness, color = Color.Gray)
 
                 NavigationDrawerItem(
-                    label = { Text("Broker", color = Color.White) },
+                    label = { 
+                        Text(
+                            "Broker", 
+                            color = if (isLoadingDevices) Color.Gray else Color.White
+                        ) 
+                    },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate(AppDestinations.BROKER_TREE_SCREEN)
-                    }
+                        if (!isLoadingDevices) {
+                            scope.launch { drawerState.close() }
+                            navController.navigate(AppDestinations.BROKER_TREE_SCREEN)
+                        }
+                    },
+                    modifier = Modifier.alpha(if (isLoadingDevices) 0.5f else 1f)
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 NavigationDrawerItem(
-                    label = { Text("Device", color = Color.White) },
+                    label = { 
+                        Text(
+                            "Device", 
+                            color = if (isLoadingDevices) Color.Gray else Color.White
+                        ) 
+                    },
                     selected = false,
                     onClick = {
-                        scope.launch { drawerState.close() }
-                        navController.navigate(AppDestinations.DEVICE_TREE_SCREEN)
-                    }
+                        if (!isLoadingDevices) {
+                            scope.launch { drawerState.close() }
+                            navController.navigate(AppDestinations.DEVICE_TREE_SCREEN)
+                        }
+                    },
+                    modifier = Modifier.alpha(if (isLoadingDevices) 0.5f else 1f)
                 )
             }
         }
@@ -170,9 +195,12 @@ fun MainScreen(
                         Text("Device App", color = Color.White)
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            scope.launch { drawerState.open() }
-                        }) {
+                        IconButton(
+                            onClick = {
+                                scope.launch { drawerState.open() }
+                            },
+                            enabled = !isLoadingDevices
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
                                 contentDescription = "Menu",
@@ -183,7 +211,10 @@ fun MainScreen(
                     actions = {
                         var expanded by remember { mutableStateOf(false) }
                         Box {
-                            IconButton(onClick = { expanded = true }) {
+                            IconButton(
+                                onClick = { expanded = true },
+                                enabled = !isLoadingDevices
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.AccountCircle,
                                     contentDescription = "Profile",
@@ -191,7 +222,7 @@ fun MainScreen(
                                 )
                             }
                             DropdownMenu(
-                                expanded = expanded,
+                                expanded = expanded && !isLoadingDevices,
                                 onDismissRequest = { expanded = false }
                             ) {
                                 DropdownMenuItem(
@@ -222,7 +253,14 @@ fun MainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .then(
+                        if (isLoadingDevices) {
+                            Modifier.alpha(0.5f)
+                        } else {
+                            Modifier
+                        }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -232,6 +270,18 @@ fun MainScreen(
                 )
             }
         }
+
+        if (isLoadingDevices) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF00A86B))
+            }
+        }
+
         if (uiStateUserGet is UserGetUiState.Loading){
             Box(
                 modifier = Modifier

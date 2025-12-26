@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,7 +21,12 @@ import com.dev.deviceapp.viewmodel.device.DeviceOptionsViewModel
 import com.dev.deviceapp.ui.theme.components.DeviceInfoReadOnly
 
 @OptIn(ExperimentalMaterial3Api::class)
-@androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_CONNECT])
+@androidx.annotation.RequiresPermission(
+    allOf = [
+        android.Manifest.permission.BLUETOOTH_SCAN,
+        android.Manifest.permission.BLUETOOTH_CONNECT
+    ]
+)
 @Composable
 fun DeviceDetailsScreen(
     navController: NavController,
@@ -43,14 +49,13 @@ fun DeviceDetailsScreen(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFF121212)
     ) {
-
         Column(
             modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-            .navigationBarsPadding()
-            .statusBarsPadding()
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .statusBarsPadding()
         ) {
 
             Row(
@@ -65,6 +70,7 @@ fun DeviceDetailsScreen(
                         tint = Color.White
                     )
                 }
+
                 Text(
                     text = "Device Details",
                     style = MaterialTheme.typography.headlineLarge,
@@ -74,7 +80,7 @@ fun DeviceDetailsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            when(val s = state) {
+            when (val s = state) {
 
                 DeviceOptionsUiState.Loading -> {
                     Column(
@@ -106,18 +112,34 @@ fun DeviceDetailsScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    Button(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00A86B),
-                            contentColor = Color.White
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF1F3D2B)
                         ),
                         shape = MaterialTheme.shapes.medium
                     ) {
-                        Text("This device already belongs to you")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF00A86B)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = "This device already belongs to you",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xFF00A86B)
+                            )
+                        }
                     }
                 }
 

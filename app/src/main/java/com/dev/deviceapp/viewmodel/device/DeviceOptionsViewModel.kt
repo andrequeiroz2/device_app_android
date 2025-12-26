@@ -42,6 +42,11 @@ class DeviceOptionsViewModel @Inject constructor(
 
     private val tokenUserId: String? get() = tokenRepository.getTokenInfoRepository()?.uuid
 
+    private val jsonRelaxed = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
+
     private val bleCharacteristicInfo: String = configLoader.getBleCharacteristicInfo()
     private val _uiState = MutableStateFlow<DeviceOptionsUiState>(DeviceOptionsUiState.Loading)
     val uiState: StateFlow<DeviceOptionsUiState> = _uiState.asStateFlow()
@@ -61,7 +66,8 @@ class DeviceOptionsViewModel @Inject constructor(
                     BleConstants.BLE_DEVICE_INFO_UUID
                 )
 
-                val parsed = Json.decodeFromString<DeviceBleInfoModel>(json.toString())
+                val parsed = jsonRelaxed.decodeFromString<DeviceBleInfoModel>(json.toString())
+
                 val userId = tokenUserId
 
                 val newState = when {
@@ -213,7 +219,10 @@ class DeviceOptionsViewModel @Inject constructor(
                         gattLocal.setCharacteristicNotification(characteristic, true)
                         val descriptor = characteristic.getDescriptor(BleConstants.BLE_CLIENT_UUID)
                         descriptor?.let {
-                            gattLocal.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                            gattLocal.writeDescriptor(
+                                it,
+                                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                            )
                         }
 
                         mainHandler.postDelayed({
@@ -226,7 +235,9 @@ class DeviceOptionsViewModel @Inject constructor(
                             if (statusWrite != BluetoothGatt.GATT_SUCCESS) {
                                 if (!operationCompleted) {
                                     operationCompleted = true
-                                    cont.resumeWithException(Exception("Failed to write characteristic, status: $statusWrite"))
+                                    cont.resumeWithException(
+                                        Exception("Failed to write characteristic, status: $statusWrite")
+                                    )
                                 }
                                 cleanup()
                             }
@@ -296,7 +307,11 @@ class DeviceOptionsViewModel @Inject constructor(
 
                 val callback = object : BluetoothGattCallback() {
                     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                    override fun onConnectionStateChange(gattLocal: BluetoothGatt, status: Int, newState: Int) {
+                    override fun onConnectionStateChange(
+                        gattLocal: BluetoothGatt,
+                        status: Int,
+                        newState: Int
+                    ) {
                         if (newState == BluetoothProfile.STATE_CONNECTED) {
                             gattLocal.discoverServices()
                         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -306,7 +321,10 @@ class DeviceOptionsViewModel @Inject constructor(
 
                     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
                     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                    override fun onServicesDiscovered(gattLocal: BluetoothGatt, status: Int) {
+                    override fun onServicesDiscovered(
+                        gattLocal: BluetoothGatt,
+                        status: Int
+                    ) {
                         val service = gattLocal.getService(serviceUuid)
                         val writeChar = service?.getCharacteristic(writeUuid)
                         val notifyChar = service?.getCharacteristic(notifyUuid)
@@ -317,14 +335,23 @@ class DeviceOptionsViewModel @Inject constructor(
                         }
 
                         gattLocal.setCharacteristicNotification(notifyChar, true)
-                        val descriptor = notifyChar.getDescriptor(BleConstants.BLE_CLIENT_UUID)
+                        val descriptor =
+                            notifyChar.getDescriptor(BleConstants.BLE_CLIENT_UUID)
                         descriptor?.let {
-                            gattLocal.writeDescriptor(it, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
+                            gattLocal.writeDescriptor(
+                                it,
+                                BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                            )
                         }
 
                         mainHandler.postDelayed({
-                            val data = jsonPayload.toString().encodeToByteArray()
-                            val status = gattLocal.writeCharacteristic(writeChar, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                            val data =
+                                jsonPayload.toString().encodeToByteArray()
+                            val status = gattLocal.writeCharacteristic(
+                                writeChar,
+                                data,
+                                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                            )
 
                             if (status != BluetoothGatt.GATT_SUCCESS) {
                                 finish(Exception("Write failed: $status"))

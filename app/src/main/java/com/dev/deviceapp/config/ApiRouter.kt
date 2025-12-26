@@ -31,6 +31,8 @@ class ApiRoutes(
         const val ROUTE_BROKER_DELETE = "/broker/%s"
 
         const val ROUTER_DEVICE_POST = "/device"
+
+        const val ROUTE_DEVICE_GET_OWNED_USER = "/device/owned"
     }
 
     // Map com as rotas do seu backend
@@ -47,8 +49,8 @@ class ApiRoutes(
         "user_put" to ROUTE_USER_PUT,
         "user_delete" to ROUTE_USER_DELETE,
 
-        "device_post" to ROUTER_DEVICE_POST
-
+        "device_post" to ROUTER_DEVICE_POST,
+        "device_get_owned_user" to ROUTE_DEVICE_GET_OWNED_USER
     )
 
     fun getUrl(key: String, vararg args: String): String {

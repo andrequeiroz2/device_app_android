@@ -5,12 +5,15 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.dev.deviceapp.database.device.DeviceDao
 import com.dev.deviceapp.repository.login.TokenRepository
 import com.dev.deviceapp.view.broker.BrokerCreateScreen
 import com.dev.deviceapp.view.broker.BrokerDetailScreen
@@ -64,6 +67,12 @@ interface TokenRepositoryEntryPoint {
     fun tokenRepository(): TokenRepository
 }
 
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface DeviceDaoEntryPoint {
+    fun deviceDao(): DeviceDao
+}
+
 @RequiresApi(Build.VERSION_CODES.S)
 @androidx.annotation.RequiresPermission(allOf = [android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_CONNECT])
 @Composable
@@ -78,6 +87,13 @@ fun AppNavigation() {
         ).tokenRepository()
     }
 
+    val deviceDao = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            DeviceDaoEntryPoint::class.java
+        ).deviceDao()
+    }
+
     val startDestination = if (tokenRepository.getToken() != null) {
         Log.i("AppNavigation", "token: ${tokenRepository.getToken()}")
         AppDestinations.MAIN_SCREEN
@@ -86,7 +102,14 @@ fun AppNavigation() {
         AppDestinations.LOGIN_SCREEN
     }
 
+    val scope = rememberCoroutineScope()
+    
     val onLogout: () -> Unit = {
+        //clear DataBase
+        scope.launch {
+            deviceDao.deleteAllDevices()
+        }
+        // clear token
         tokenRepository.clearToken()
         navController.navigate(AppDestinations.LOGIN_SCREEN) {
             popUpTo(0) { inclusive = true }

@@ -34,6 +34,11 @@ data class DeviceBleModel(
 }
 
 @Serializable
+data class RawBlePacket(
+    val raw_data: String
+)
+
+@Serializable
 data class DeviceBleInfoModel(
     val boarder_type: String = "",
     val mac_address: String = "",

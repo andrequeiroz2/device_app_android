@@ -5,6 +5,10 @@ package com.dev.deviceapp.view.device
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -67,11 +71,25 @@ fun DeviceOptionsScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            Text(
-                text = "Device Options",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color(0xFF00A86B)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White
+                    )
+                }
+
+                Text(
+                    text = "Device Options",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = Color(0xFF00A86B)
+                )
+            }
 
             Spacer(Modifier.height(20.dp))
 
@@ -106,19 +124,29 @@ fun DeviceOptionsScreen(
 
                     Spacer(Modifier.height(20.dp))
 
-
                     Button(
                         onClick = {
-                            navController.navigate("device/adopt/create/${deviceMac}")
+                            if (deviceInf.adopted_status == 0) {
+                                navController.navigate("device/adopt/create/${deviceMac}")
+                            }
                         },
+                        enabled = deviceInf.adopted_status == 0,  // ✅ habilita/desabilita o botão
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF00A86B),
-                            contentColor = Color.White
+                            containerColor = if (deviceInf.adopted_status == 0)
+                                Color(0xFF00A86B)
+                            else
+                                Color(0xFF444444),   // cinza quando desabilitado
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFF444444),
+                            disabledContentColor = Color.LightGray
                         ),
                         shape = MaterialTheme.shapes.medium
                     ) {
-                        Text("Adopt")
+                        Text(
+                            if (deviceInf.adopted_status == 0) "Adopt"
+                            else "Already adopted"
+                        )
                     }
 
                 }

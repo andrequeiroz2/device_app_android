@@ -2,7 +2,10 @@ package com.dev.deviceapp.view.mainscreen
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Menu
@@ -24,6 +27,8 @@ import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.database.device.DeviceDao
 import com.dev.deviceapp.model.device.DeviceGetOwnedUserFilterRequest
 import com.dev.deviceapp.repository.device.DeviceGetOwnedUserRepository
+import com.dev.deviceapp.database.device.DeviceEntity
+import com.dev.deviceapp.viewmodel.device.DeviceOwnedViewModel
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import com.dev.deviceapp.viewmodel.user.UserGetUiState
 import com.dev.deviceapp.viewmodel.user.UserGetViewModel
@@ -32,6 +37,51 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.launch
+
+@Composable
+fun DeviceCard(
+    device: DeviceEntity,
+    onClick: () -> Unit
+) {
+    // Extrair últimas mensagens
+    val latestMessages = remember(device.messages) {
+        device.messages?.flatMap { messageEntity ->
+            messageEntity.messages?.map { (key, received) ->
+                "$key: ${received.value}${received.scale}"
+            } ?: emptyList()
+        } ?: emptyList()
+    }
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = device.name,
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.White
+            )
+            
+            if (latestMessages.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                latestMessages.take(3).forEach { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF00A86B),
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+            }
+        }
+    }
+}
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
@@ -51,6 +101,7 @@ fun MainScreen(
     navController: NavController,
     viewModel: ProfileViewModel = hiltViewModel(),
     userGetViewModel: UserGetViewModel = hiltViewModel(),
+    deviceOwnedViewModel: DeviceOwnedViewModel = hiltViewModel(),
     onLogout: () -> Unit = {}
 ) {
 
@@ -133,6 +184,16 @@ fun MainScreen(
 
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    
+    // Observar dispositivos do banco
+    val devices by deviceOwnedViewModel.devices.collectAsState()
+    
+    // Recarregar dispositivos quando terminar o loading
+    LaunchedEffect(isLoadingDevices) {
+        if (!isLoadingDevices) {
+            deviceOwnedViewModel.loadDevices()
+        }
+    }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -250,7 +311,7 @@ fun MainScreen(
             },
             containerColor = Color(0xFF121212)
         ) { innerPadding ->
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -260,14 +321,38 @@ fun MainScreen(
                         } else {
                             Modifier
                         }
-                    ),
-                contentAlignment = Alignment.Center
+                    )
             ) {
-                Text(
-                    text = "Bem-vindo!",
-                    color = Color.White,
-                    style = MaterialTheme.typography.headlineSmall
-                )
+                if (devices.isEmpty() && !isLoadingDevices) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Nenhum dispositivo encontrado",
+                            color = Color.White,
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(devices, key = { it.uuid }) { device ->
+                            DeviceCard(
+                                device = device,
+                                onClick = {
+                                    navController.currentBackStackEntry
+                                        ?.savedStateHandle
+                                        ?.set("deviceUuid", device.uuid)
+                                    navController.navigate(AppDestinations.DEVICE_OWNED_DETAIL_SCREEN)
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
 

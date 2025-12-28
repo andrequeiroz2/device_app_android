@@ -106,6 +106,7 @@ class DeviceGetOwnedUserRepository @Inject constructor(
                 actuatorType = device.actuatorType,
                 deviceConditionInt = device.deviceConditionInt,
                 deviceConditionText = device.deviceConditionText,
+                topic = device.topic,
                 macAddress = device.macAddress,
                 createdAt = device.createdAt,
                 updatedAt = device.updatedAt,

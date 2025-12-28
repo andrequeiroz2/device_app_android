@@ -57,6 +57,8 @@ object AppDestinations {
     const val DEVICE_DETAILS_SCREEN = "device/adopt/details"
 
     const val DEVICE_CREATE_SCREEN = "device/adopt/create"
+    
+    const val DEVICE_OWNED_DETAIL_SCREEN = "device/owned/detail"
 
 }
 
@@ -208,6 +210,10 @@ fun AppNavigation() {
                 navController = navController,
                 mac = mac
             )
+        }
+        
+        composable(route = AppDestinations.DEVICE_OWNED_DETAIL_SCREEN) {
+            com.dev.deviceapp.view.device.DeviceOwnedDetailScreen(navController = navController)
         }
     }
 }

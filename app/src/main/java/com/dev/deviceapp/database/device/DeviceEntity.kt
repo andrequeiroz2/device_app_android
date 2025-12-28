@@ -22,6 +22,7 @@ data class DeviceEntity(
     val actuatorType: String?,
     val deviceConditionInt: Int,
     val deviceConditionText: String,
+    val topic: String,
     val macAddress: String,
     val createdAt: Instant?,
     val updatedAt: Instant?,

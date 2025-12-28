@@ -34,6 +34,7 @@ data class DeviceAndMessageResponse(
     val deviceConditionInt: Int,
     @SerialName("device_condition_text")
     val deviceConditionText: String,
+    val topic: String,
     @SerialName("mac_address")
     val macAddress: String,
     @SerialName("created_at")

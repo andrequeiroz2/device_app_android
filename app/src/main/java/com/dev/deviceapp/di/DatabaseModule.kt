@@ -2,6 +2,7 @@ package com.dev.deviceapp.di
 
 import android.content.Context
 import com.dev.deviceapp.database.AppDatabase
+import com.dev.deviceapp.database.broker.BrokerDao
 import com.dev.deviceapp.database.device.DeviceDao
 import dagger.Module
 import dagger.Provides
@@ -24,6 +25,12 @@ object DatabaseModule {
     @Singleton
     fun provideDeviceDao(database: AppDatabase): DeviceDao {
         return database.deviceDao()
+    }
+    
+    @Provides
+    @Singleton
+    fun provideBrokerDao(database: AppDatabase): BrokerDao {
+        return database.brokerDao()
     }
 }
 

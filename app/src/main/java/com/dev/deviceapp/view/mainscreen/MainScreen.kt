@@ -25,8 +25,12 @@ import androidx.navigation.compose.rememberNavController
 import android.util.Log
 import com.dev.deviceapp.AppDestinations
 import com.dev.deviceapp.database.device.DeviceDao
+import com.dev.deviceapp.model.broker.BrokerGetFilterRequest
 import com.dev.deviceapp.model.device.DeviceGetOwnedUserFilterRequest
+import com.dev.deviceapp.mqtt.MqttConnectionState
+import com.dev.deviceapp.repository.broker.BrokerGetFilterRepository
 import com.dev.deviceapp.repository.device.DeviceGetOwnedUserRepository
+import com.dev.deviceapp.repository.mqtt.MqttRepository
 import com.dev.deviceapp.database.device.DeviceEntity
 import com.dev.deviceapp.viewmodel.device.DeviceOwnedViewModel
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
@@ -37,6 +41,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.launch
+import kotlin.time.ExperimentalTime
 
 @Composable
 fun DeviceCard(
@@ -95,7 +100,19 @@ interface DeviceDaoEntryPoint {
     fun deviceDao(): DeviceDao
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface BrokerGetFilterRepositoryEntryPoint {
+    fun brokerGetFilterRepository(): BrokerGetFilterRepository
+}
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface MqttRepositoryEntryPoint {
+    fun mqttRepository(): MqttRepository
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 @Composable
 fun MainScreen(
     navController: NavController,
@@ -130,6 +147,40 @@ fun MainScreen(
             DeviceGetOwnedUserRepositoryEntryPoint::class.java
         ).deviceGetOwnedUserRepository()
     }
+    
+    val brokerRepository = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            BrokerGetFilterRepositoryEntryPoint::class.java
+        ).brokerGetFilterRepository()
+    }
+    
+    val mqttRepository = remember {
+        EntryPointAccessors.fromApplication(
+            context.applicationContext,
+            MqttRepositoryEntryPoint::class.java
+        ).mqttRepository()
+    }
+    
+    // Observar estado da conexão MQTT e logar mudanças
+    val mqttConnectionState by mqttRepository.connectionState.collectAsState()
+    
+    LaunchedEffect(mqttConnectionState) {
+        when (mqttConnectionState) {
+            is MqttConnectionState.Disconnected -> {
+                Log.i("MainScreen", "MQTT State: DISCONNECTED")
+            }
+            is MqttConnectionState.Connecting -> {
+                Log.i("MainScreen", "MQTT State: CONNECTING...")
+            }
+            is MqttConnectionState.Connected -> {
+                Log.i("MainScreen", "MQTT State: CONNECTED ✓")
+            }
+            is MqttConnectionState.Error -> {
+                Log.e("MainScreen", "MQTT State: ERROR - ${(mqttConnectionState as MqttConnectionState.Error).message}")
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -158,6 +209,67 @@ fun MainScreen(
             } else {
                 // Devices already exist in the database; no need to call the API.
                 Log.i("MainScreen", "Devices already in cache (${existingDevices.size} devices), skipping API call")
+            }
+            
+            // Buscar e salvar broker conectado
+            try {
+                Log.i("MainScreen", "=== Loading connected broker ===")
+                val brokerResponse = brokerRepository.getBroker(
+                    BrokerGetFilterRequest(connected = true)
+                )
+                when (brokerResponse) {
+                    is com.dev.deviceapp.model.broker.BrokerGetFilterResponse.Success -> {
+                        if (brokerResponse.brokers.isNotEmpty()) {
+                            val broker = brokerResponse.brokers.first()
+                            Log.i("MainScreen", "Connected broker found and saved:")
+                            Log.i("MainScreen", "  - UUID: ${broker.uuid}")
+                            Log.i("MainScreen", "  - Host: ${broker.host}")
+                            Log.i("MainScreen", "  - Port: ${broker.port}")
+                            Log.i("MainScreen", "  - Client ID: ${broker.clientId}")
+                            Log.i("MainScreen", "  - Clean Session: ${broker.cleanSession}")
+                            Log.i("MainScreen", "  - Keep Alive: ${broker.keepAlive}")
+                            
+                            // Conectar ao broker MQTT usando o broker recebido da API
+                            // (o broker já foi salvo no banco pelo repository)
+                            Log.i("MainScreen", "=== Attempting MQTT connection ===")
+                            Log.i("MainScreen", "Server URI: tcp://${broker.host}:${broker.port}")
+                            Log.i("MainScreen", "Client ID: ${broker.clientId}")
+                            
+                            // Converter o broker da API para BrokerEntity para conexão
+                            val brokerEntity = com.dev.deviceapp.database.broker.BrokerEntity(
+                                uuid = broker.uuid,
+                                host = broker.host,
+                                port = broker.port,
+                                clientId = broker.clientId,
+                                version = broker.version,
+                                versionText = broker.versionText,
+                                keepAlive = broker.keepAlive,
+                                cleanSession = broker.cleanSession,
+                                lastWillTopic = broker.lastWillTopic,
+                                lastWillMessage = broker.lastWillMessage,
+                                lastWillQos = broker.lastWillQos,
+                                lastWillRetain = broker.lastWillRetain,
+                                connected = broker.connected,
+                                createdAt = broker.createdAt,
+                                updatedAt = broker.updatedAt
+                            )
+                            
+                            val connectionStarted = mqttRepository.connect(brokerEntity)
+                            if (connectionStarted) {
+                                Log.i("MainScreen", "✓ MQTT connection attempt started successfully")
+                            } else {
+                                Log.w("MainScreen", "✗ Failed to start MQTT connection")
+                            }
+                        } else {
+                            Log.i("MainScreen", "No connected broker found")
+                        }
+                    }
+                    is com.dev.deviceapp.model.broker.BrokerGetFilterResponse.Error -> {
+                        Log.w("MainScreen", "Error loading broker: ${brokerResponse.errorMessage}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainScreen", "Error loading broker: ${e.message}", e)
             }
         } catch (e: Exception) {
             Log.e("MainScreen", "Error checking/loading devices: ${e.message}", e)

@@ -42,13 +42,13 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.launch
 import kotlin.time.ExperimentalTime
-
+import com.dev.deviceapp.config.ApiRoutes
 @Composable
 fun DeviceCard(
     device: DeviceEntity,
     onClick: () -> Unit
 ) {
-    // Extrair últimas mensagens
+    // Get last messages
     val latestMessages = remember(device.messages) {
         device.messages?.flatMap { messageEntity ->
             messageEntity.messages?.map { (key, received) ->
@@ -130,6 +130,11 @@ fun MainScreen(
 
     val context = LocalContext.current
     
+    // Initialize ApiRoutes with context
+    val apiRoutes = remember {
+        ApiRoutes(context)
+    }
+    
     // State loading controller spinner
     var isLoadingDevices by remember { mutableStateOf(false) }
     
@@ -147,7 +152,8 @@ fun MainScreen(
             DeviceGetOwnedUserRepositoryEntryPoint::class.java
         ).deviceGetOwnedUserRepository()
     }
-    
+
+    // Access BrokerDao and Repository
     val brokerRepository = remember {
         EntryPointAccessors.fromApplication(
             context.applicationContext,
@@ -211,7 +217,7 @@ fun MainScreen(
                 Log.i("MainScreen", "Devices already in cache (${existingDevices.size} devices), skipping API call")
             }
             
-            // Buscar e salvar broker conectado
+            // Search and save connected broker
             try {
                 Log.i("MainScreen", "=== Loading connected broker ===")
                 val brokerResponse = brokerRepository.getBroker(
@@ -221,6 +227,8 @@ fun MainScreen(
                     is com.dev.deviceapp.model.broker.BrokerGetFilterResponse.Success -> {
                         if (brokerResponse.brokers.isNotEmpty()) {
                             val broker = brokerResponse.brokers.first()
+                            val mqttUrl = apiRoutes.getMqttUrl(broker.port, broker.host)
+
                             Log.i("MainScreen", "Connected broker found and saved:")
                             Log.i("MainScreen", "  - UUID: ${broker.uuid}")
                             Log.i("MainScreen", "  - Host: ${broker.host}")
@@ -228,14 +236,12 @@ fun MainScreen(
                             Log.i("MainScreen", "  - Client ID: ${broker.clientId}")
                             Log.i("MainScreen", "  - Clean Session: ${broker.cleanSession}")
                             Log.i("MainScreen", "  - Keep Alive: ${broker.keepAlive}")
-                            
-                            // Conectar ao broker MQTT usando o broker recebido da API
-                            // (o broker já foi salvo no banco pelo repository)
+
                             Log.i("MainScreen", "=== Attempting MQTT connection ===")
-                            Log.i("MainScreen", "Server URI: tcp://${broker.host}:${broker.port}")
+                            Log.i("MainScreen", "Server URI: getMqttUrl $mqttUrl")
                             Log.i("MainScreen", "Client ID: ${broker.clientId}")
                             
-                            // Converter o broker da API para BrokerEntity para conexão
+                            // Converter broker response API on BrokerEntity
                             val brokerEntity = com.dev.deviceapp.database.broker.BrokerEntity(
                                 uuid = broker.uuid,
                                 host = broker.host,

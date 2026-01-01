@@ -275,8 +275,8 @@ fun BrokerList(
                                     it.version,
                                     it.versionText,
                                     it.keepAlive,
-                                    it.cleanSession
-                                    ,it.lastWillTopic,
+                                    it.cleanSession,
+                                    it.lastWillTopic,
                                     it.lastWillMessage,
                                     it.lastWillQos,
                                     it.lastWillRetain,
@@ -303,33 +303,4 @@ fun BrokerList(
     }
 }
 
-
-//@Composable
-//fun BrokerList(brokers: LazyPagingItems<BrokerResponse.Success>) {
-//    LazyColumn(
-//        modifier = Modifier.fillMaxSize(),
-//        contentPadding = PaddingValues(16.dp),
-//        verticalArrangement = Arrangement.spacedBy(12.dp)
-//    ) {
-//        items(brokers.itemCount) { index ->
-//            val broker = brokers[index]
-//            broker?.let {
-//                Card(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
-//                ) {
-//                    Column(modifier = Modifier.padding(16.dp)) {
-//                        Text("UUID: ${it.uuid}", color = Color.White)
-//                        Text("Host: ${it.host}", color = Color.White)
-//                        Text("Port: ${it.port}", color = Color.White)
-//                        Text(
-//                            "Connected: ${it.connected}",
-//                            color = if (it.connected) Color(0xFF00A86B) else Color.Red
-//                        )
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
 

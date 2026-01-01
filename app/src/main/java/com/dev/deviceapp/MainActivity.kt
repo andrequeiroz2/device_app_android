@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             DeviceAppTheme {
-                MaterialTheme  {
+                MaterialTheme {
                     if (haveBlePermissions) {
                         AppNavigation()
                     } else {

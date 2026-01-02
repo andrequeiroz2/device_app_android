@@ -2,6 +2,8 @@ package com.dev.deviceapp.view.broker
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -67,9 +69,10 @@ fun BrokerDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .statusBarsPadding()
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

@@ -253,12 +253,7 @@ class MqttClient(
             false
         }
     }
-    
-    /**
-     * Cancela a inscrição de um tópico
-     * @param topic Tópico para cancelar inscrição
-     * @return true se o cancelamento foi iniciado com sucesso
-     */
+
     fun unsubscribe(topic: String): Boolean {
         return try {
             if (mqttClient != null && isConnected()) {
@@ -286,15 +281,7 @@ class MqttClient(
             false
         }
     }
-    
-    /**
-     * Publica uma mensagem em um tópico
-     * @param topic Tópico para publicar
-     * @param message Mensagem a ser publicada
-     * @param qos Nível de qualidade de serviço (0, 1 ou 2)
-     * @param retained Se a mensagem deve ser retida pelo broker
-     * @return true se a publicação foi iniciada com sucesso
-     */
+
     fun publish(topic: String, message: String, qos: Int = 1, retained: Boolean = false): Boolean {
         return try {
             if (mqttClient != null && isConnected()) {
@@ -323,13 +310,7 @@ class MqttClient(
             false
         }
     }
-    
-    /**
-     * Verifica se está conectado
-     */
-    /**
-     * Verifica se está conectado
-     */
+
     fun isConnected(): Boolean {
         return try {
             mqttClient?.state == MqttClientState.CONNECTED

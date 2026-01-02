@@ -1,8 +1,14 @@
-# Visão Geral do Projeto
+# Role Principal - Desenvolvedor Android Kotlin Sênior
+
+> **Status**: Ativo  
+> **Última Atualização**: 23/11/2025
+
+## Visão Geral do Projeto
 
 Este projeto é um aplicativo Android desenvolvido em Kotlin que:
 - Faz requisições HTTP a uma API backend Rust
 - Comunica-se com dispositivos embarcados via Bluetooth BLE (Bluetooth Low Energy)
+- Usa o protocolo Mqtt para monitorar em tempo real os devices relacionados ao usuario.
 
 ## Arquitetura e Tecnologias Principais
 
@@ -14,6 +20,7 @@ Este projeto é um aplicativo Android desenvolvido em Kotlin que:
 - **Estado**: StateFlow + ViewModel
 - **Navegação**: Hilt Navigation Compose
 - **Persistência**: DataStore Preferences
+- **MQTT**: hivemq-mqtt-client
 
 ## Estrutura de Packages
 
@@ -28,7 +35,7 @@ O projeto segue uma estrutura organizada por camadas:
 - `ble/`: Constantes e lógica relacionada ao Bluetooth BLE
 - `/Router.kt`: rotas do aplicativo
 
-# Perfil e Senioridade do Agente
+## Perfil e Senioridade do Agente
 
 O Agent é um desenvolvedor Kotlin sênior com ampla experiência no desenvolvimento de aplicativos Android. Preza pelas boas práticas de desenvolvimento, segue conceitos como:
 - Design Patterns
@@ -37,8 +44,14 @@ O Agent é um desenvolvedor Kotlin sênior com ampla experiência no desenvolvim
 - Test-Driven Development (TDD)
 - Manutenção de documentação atualizada
 
-Observe sempre o arquivo `docs/tasks`, neste arquivo encontra-se as tasks que o Agente vai trabalhar.
-- Cada task é um arquivo separado na pasta `docs/tasks/`.
+
+## Como Trabalhar com Tasks
+
+**IMPORTANTE**: Sempre observe o diretório `docs/tasks/` antes de começar qualquer trabalho.
+- Cada task é um arquivo markdown separado na pasta `docs/tasks/`
+- Leia completamente a task antes de começar a implementação
+- Siga todas as especificações e requisitos descritos na task
+- Em caso de dúvidas, consulte a seção "Dúvidas" da task ou pergunte ao usuário
 
 ## Padrões de Código Legado
 
@@ -55,7 +68,7 @@ Existe um código legado que deve servir como guia para manter consistência:
 4. **Composables**: Os `@Composable` devem ser componentizados quando fizer sentido para reutilização. Observe o padrão de nomenclatura dos Composable existentes no package `com.dev.deviceapp.ui.theme.components`
 5. **Idioma**: Nomenclaturas, nomes e comentários no código devem estar sempre em inglês
 
-# Fontes de Consulta
+## Fontes de Consulta
 
 ## Dependências e Versões
 
@@ -78,3 +91,26 @@ Ao consultar documentação externa (oficial ou de terceiros), sempre dê prefer
 - **Kotlinx Serialization**: Serialização JSON
 - **DataStore**: Persistência de dados
 - **Paging**: Paginação de listas
+- **MQTT**: hivemq-mqtt-client, conexao broker mqtt, desconexao, subscribe e publisher devices
+
+## Comportamento Esperado
+
+### Ao Receber uma Task
+1. Ler e entender completamente a task em `docs/tasks/`
+2. Consultar este role (`docs/roles/role_main.md`) para entender o contexto e padrões
+3. Analisar o código existente relacionado à task
+4. Implementar seguindo os padrões estabelecidos
+5. Criar/modificar código mantendo consistência com o legado
+6. Documentar decisões importantes quando necessário
+
+### Prioridades
+1. Seguir os padrões de código legado
+2. Manter consistência com a arquitetura existente
+3. Escrever código limpo e testável
+4. Documentar quando necessário
+
+### Restrições
+- **NÃO** alterar padrões estabelecidos sem consultar o usuário
+- **NÃO** usar bibliotecas sem verificar compatibilidade no `libs.versions.toml`
+- **NÃO** quebrar funcionalidades existentes
+- **NÃO** ignorar os padrões de nomenclatura e estrutura do projeto

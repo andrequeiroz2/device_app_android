@@ -49,6 +49,8 @@ fun DeviceOwnedDetailScreen(
                 .fillMaxSize()
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .statusBarsPadding()
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

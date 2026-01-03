@@ -55,9 +55,10 @@ class MqttClient(
                 return false
             }
             
-            // Parse server URI - handle different protocols (tcp://, ssl://, ws://, wss://)
+            // Parse server URI - handle different protocols (mqtt://, tcp://, ssl://, ws://, wss://)
             val isWebSocket = serverUri.startsWith("ws://") || serverUri.startsWith("wss://")
             val cleanUri = serverUri
+                .removePrefix("mqtt://")
                 .removePrefix("tcp://")
                 .removePrefix("ssl://")
                 .removePrefix("ws://")
@@ -102,7 +103,8 @@ class MqttClient(
                 .useMqttVersion3()
                 .serverHost(host)
                 .serverPort(port)
-                .identifier(broker.clientId.ifEmpty { UUID.randomUUID().toString() })
+                //.identifier(broker.clientId.ifEmpty { UUID.randomUUID().toString() })
+                .identifier(UUID.randomUUID().toString())
                 .automaticReconnectWithDefaultConfig()
             
             // Configure WebSocket if needed

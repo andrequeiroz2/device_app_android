@@ -32,6 +32,7 @@ import com.dev.deviceapp.repository.broker.BrokerGetFilterRepository
 import com.dev.deviceapp.repository.device.DeviceGetOwnedUserRepository
 import com.dev.deviceapp.repository.mqtt.MqttRepository
 import com.dev.deviceapp.database.device.DeviceEntity
+import com.dev.deviceapp.viewmodel.device.DeviceMqttSubscribeViewModel
 import com.dev.deviceapp.viewmodel.device.DeviceOwnedViewModel
 import com.dev.deviceapp.viewmodel.profile.ProfileViewModel
 import com.dev.deviceapp.viewmodel.user.UserGetUiState
@@ -119,6 +120,7 @@ fun MainScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
     userGetViewModel: UserGetViewModel = hiltViewModel(),
     deviceOwnedViewModel: DeviceOwnedViewModel = hiltViewModel(),
+    deviceMqttSubscribeViewModel: DeviceMqttSubscribeViewModel = hiltViewModel(),
     onLogout: () -> Unit = {}
 ) {
 
@@ -309,6 +311,21 @@ fun MainScreen(
     // Recarregar dispositivos quando terminar o loading
     LaunchedEffect(isLoadingDevices) {
         if (!isLoadingDevices) {
+            deviceOwnedViewModel.loadDevices()
+        }
+    }
+
+    // Iniciar subscribe MQTT quando devices estiverem carregados e atualizar quando mudarem
+    LaunchedEffect(devices, isLoadingDevices) {
+        if (devices.isNotEmpty() && !isLoadingDevices) {
+            deviceMqttSubscribeViewModel.startSubscribing(devices)
+            deviceMqttSubscribeViewModel.updateDevicesList(devices)
+        }
+    }
+
+    // Observar eventos de atualização de device e recarregar lista
+    LaunchedEffect(Unit) {
+        deviceMqttSubscribeViewModel.deviceUpdatedEvent.collect {
             deviceOwnedViewModel.loadDevices()
         }
     }
